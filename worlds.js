@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { Lensflare, LensflareElement } from 'three/addons/objects/Lensflare.js';
 const host=document.querySelector('#world-canvas');
 const card=document.querySelector('.world-stage');
 if(!host||!card)throw Error('No stage');
@@ -28,6 +29,11 @@ function glowTexture(){
 }
 const glowMap=glowTexture();
 function glow(col,size,opacity=1){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:glowMap,color:col,transparent:true,opacity,blending:THREE.AdditiveBlending,depthWrite:false}));s.scale.set(size,size,1);return s;}
+const flare=new Lensflare();
+flare.addElement(new LensflareElement(glowMap,.9,0,new THREE.Color(0xffe9bf)));
+flare.addElement(new LensflareElement(glowMap,.22,.35,new THREE.Color(0x8bc5e6)));
+flare.addElement(new LensflareElement(glowMap,.38,.65,new THREE.Color(0xf6c9a0)));
+const flareLight=new THREE.PointLight(0xffd8aa,8,9);flareLight.position.set(.35,-.2,.4);flareLight.add(flare);universe.add(flareLight);
 const palette=[0xb0d4da,0xd4ead7,0xf7d8b3];
 function seeded(n){let x=Math.sin(n*127.1+78.23)*43758.5453123;return x-Math.floor(x)}
 const points=[];for(let i=0;i<(mobile?340:680);i++){
