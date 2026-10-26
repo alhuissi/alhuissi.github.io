@@ -1,3 +1,0 @@
-User-agent: *
-Allow: /
-Sitemap: https://alhuissi.github.io/sitemap.xml
