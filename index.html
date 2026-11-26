@@ -135,20 +135,43 @@
         <h2 id="projects-title">Projects</h2>
         <nav aria-label="Project destinations">
           <ul class="project-list">
-            <li><a href="#dream-ocean" class="dream"><svg class="icon" aria-hidden="true"><use href="#icon-wave"/></svg><span>Dream Ocean<small>Psychological fantasy RPG</small></span></a></li>
-            <li><a href="#pocket-orbit" class="orbit"><svg class="icon" aria-hidden="true"><use href="#icon-ship"/></svg><span>Pocket Orbit<small>Space farming adventure</small></span></a></li>
-            <li><a href="#hanzizap" class="arcade"><svg class="icon" aria-hidden="true"><use href="#icon-spark"/></svg><span>HanziZap<small>Mandarin learning arcade</small></span></a></li>
+            <li>
+              <a href="#dream-ocean" class="project-select dream">
+                <img class="project-cover" src="./island-media/dream-ocean.webp" width="1120" height="630" alt="" loading="lazy" decoding="async">
+                <img class="project-mark" src="./island-media/dream-ocean-logo.webp" width="680" height="277" alt="Dream Ocean" loading="lazy" decoding="async">
+                <small>Psychological fantasy RPG</small>
+              </a>
+            </li>
+            <li>
+              <a href="#pocket-orbit" class="project-select orbit">
+                <img class="project-cover" src="./island-media/pocket-orbit.webp" width="1120" height="630" alt="" loading="lazy" decoding="async">
+                <img class="project-mark" src="./island-media/pocket-orbit-logo.webp" width="680" height="375" alt="Pocket Orbit" loading="lazy" decoding="async">
+                <small>Space farming adventure</small>
+              </a>
+            </li>
+            <li>
+              <a href="#hanzizap" class="project-select arcade">
+                <img class="project-cover" src="./island-media/hanzizap.webp" width="640" height="791" alt="" loading="lazy" decoding="async">
+                <img class="project-mark" src="./island-media/hanzizap-logo.svg" width="290" height="69" alt="HanziZap" loading="lazy" decoding="async">
+                <small>Mandarin learning arcade</small>
+              </a>
+            </li>
           </ul>
         </nav>
       </section>
 
-      <article class="entry dream" id="dream-ocean" aria-labelledby="dream-title">
+      <article class="entry project-entry dream" id="dream-ocean" aria-labelledby="dream-title">
         <a class="entry-close" href="#world" aria-label="Close Dream Ocean"><svg class="icon" aria-hidden="true"><use href="#icon-close"/></svg></a>
-        <p class="entry-location">The Gateway</p>
-        <h2 id="dream-title">Dream Ocean</h2>
+        <div class="entry-wayfinding">
+          <a href="#projects">All projects</a>
+          <p class="entry-location">The Gateway</p>
+        </div>
+        <h2 class="project-title" id="dream-title">
+          <img src="./island-media/dream-ocean-logo.webp" width="680" height="277" alt="Dream Ocean">
+        </h2>
         <figure class="entry-art">
-          <img src="./island-media/dream-ocean.webp" width="1000" height="563" alt="A coastal village underneath an enormous suspended wave in Dream Ocean." loading="lazy" decoding="async">
-          <figcaption>Kuroshore, captured in game</figcaption>
+          <img src="./island-media/dream-ocean.webp" width="1120" height="630" alt="Andi and his companions cross a hall covered in painted mosaics in Dream Ocean." loading="lazy" decoding="async">
+          <figcaption>The Swallowed House</figcaption>
         </figure>
         <p>Follow Andi and his dog Sun through an ocean of worlds shaped by memory. Dream Ocean is a psychological fantasy RPG with tactical encounters and party battles.</p>
         <div class="entry-links">
@@ -158,13 +181,18 @@
         <button class="walk-link" type="button" data-walk="dream-ocean" hidden>Walk to the gateway</button>
       </article>
 
-      <article class="entry orbit" id="pocket-orbit" aria-labelledby="orbit-title">
+      <article class="entry project-entry orbit" id="pocket-orbit" aria-labelledby="orbit-title">
         <a class="entry-close" href="#world" aria-label="Close Pocket Orbit"><svg class="icon" aria-hidden="true"><use href="#icon-close"/></svg></a>
-        <p class="entry-location">The Launchpad</p>
-        <h2 id="orbit-title">Pocket Orbit</h2>
+        <div class="entry-wayfinding">
+          <a href="#projects">All projects</a>
+          <p class="entry-location">The Launchpad</p>
+        </div>
+        <h2 class="project-title" id="orbit-title">
+          <img src="./island-media/pocket-orbit-logo.webp" width="680" height="375" alt="Pocket Orbit">
+        </h2>
         <figure class="entry-art">
-          <img src="./island-media/pocket-orbit.webp" width="1000" height="528" alt="A shuttle flies toward green and ochre planets in the Rell system." loading="lazy" decoding="async">
-          <figcaption>The Rell system, captured in game</figcaption>
+          <img src="./island-media/pocket-orbit.webp" width="1120" height="630" alt="Pink flower beds surround a lit habitat beside Glimmer Pond on Arven at dusk." loading="lazy" decoding="async">
+          <figcaption>Glimmer Pond, Arven</figcaption>
         </figure>
         <p>Fly between planets with Mica, pick a place to put down roots, and grow a garden. Explore the Rell system solo or with a friend.</p>
         <div class="entry-links">
@@ -174,13 +202,21 @@
         <button class="walk-link" type="button" data-walk="pocket-orbit" hidden>Walk to the launchpad</button>
       </article>
 
-      <article class="entry arcade" id="hanzizap" aria-labelledby="arcade-title">
+      <article class="entry project-entry arcade" id="hanzizap" aria-labelledby="arcade-title">
         <a class="entry-close" href="#world" aria-label="Close HanziZap"><svg class="icon" aria-hidden="true"><use href="#icon-close"/></svg></a>
-        <p class="entry-location">The Arcade</p>
-        <h2 id="arcade-title">HanziZap</h2>
-        <figure class="entry-art portrait-art">
-          <img src="./island-media/hanzizap.webp" width="469" height="720" alt="An illustrated picture-matching round in HanziZap Sprint." loading="lazy" decoding="async">
-          <figcaption>Sprint mode</figcaption>
+        <div class="entry-wayfinding">
+          <a href="#projects">All projects</a>
+          <p class="entry-location">The Arcade</p>
+        </div>
+        <h2 class="project-title" id="arcade-title">
+          <img src="./island-media/hanzizap-logo.svg" width="290" height="69" alt="HanziZap">
+        </h2>
+        <figure class="entry-art app-captures">
+          <div class="app-capture-grid">
+            <img src="./island-media/hanzizap.webp" width="640" height="791" alt="The character for water above four illustrated choices in a timed HanziZap round." loading="lazy" decoding="async">
+            <img src="./island-media/hanzizap-daily.webp" width="640" height="791" alt="A completed round for the character for dog, with Mandarin and pinyin responses." loading="lazy" decoding="async">
+          </div>
+          <figcaption class="app-capture-grid"><span>Sprint</span><span>Daily Zap</span></figcaption>
         </figure>
         <p>Match Mandarin characters to pictures in 45-second Sprint rounds, practice everyday conversations, and learn 300 beginner words at your own pace.</p>
         <div class="entry-links">

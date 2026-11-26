@@ -9,7 +9,7 @@
 :root {
   color-scheme: dark;
   --night: #16222e;
-  --panel: #1d2b38;
+  --panel: #17222f;
   --ink: #fff4de;
   --muted: #ddd8ce;
   --gold: #f2c58d;
@@ -416,13 +416,13 @@ kbd {
   position: fixed;
   inset: 0 0 0 auto;
   margin: 0;
-  width: min(100%, 33rem);
+  width: min(100%, 35rem);
   max-width: none;
   height: 100%;
   max-height: none;
   padding:
-    max(3.45rem, calc(env(safe-area-inset-top) + 1rem))
-    clamp(1.25rem, 4.3vw, 3.25rem)
+    max(2.8rem, calc(env(safe-area-inset-top) + 1rem))
+    clamp(1.25rem, 3.5vw, 3rem)
     max(2rem, env(safe-area-inset-bottom));
   overflow: auto;
   color: var(--ink);
@@ -437,27 +437,100 @@ kbd {
   to { opacity: 1; transform: translateX(0); }
 }
 
-.project-list { list-style: none; margin: 1.5rem 0; padding: 0; }
-.project-list li { border-top: 1px solid var(--line); }
-.project-list li:last-child { border-bottom: 1px solid var(--line); }
-.project-list a {
+.project-list {
+  display: grid;
+  gap: .7rem;
+  list-style: none;
+  margin: 1.6rem 0 0;
+  padding: 0;
+}
+.project-select {
+  position: relative;
+  isolation: isolate;
   display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1.15rem .3rem;
-  font: 540 1.95rem/1 var(--display);
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: .6rem;
+  min-height: clamp(7.75rem, 17vh, 9.4rem);
+  overflow: hidden;
+  padding: .85rem clamp(.95rem, 3.7vw, 1.35rem);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #101b28;
+  color: var(--ink);
   text-decoration: none;
 }
-.project-list a:hover { color: var(--accent); }
-.project-list .icon { width: 1.53rem; height: 1.53rem; color: var(--accent); }
-.project-list small {
-  display: block;
-  color: var(--muted);
-  font: 490 .87rem/1.4 system-ui, sans-serif;
-  margin-top: .35rem;
+.project-select:hover,
+.project-select:focus-visible { border-color: var(--accent); }
+.project-cover,
+.project-select::before {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
+.project-cover {
+  z-index: -2;
+  object-fit: cover;
+  object-position: center var(--cover-position, 53%);
+  transition: transform .28s ease;
+}
+.project-select::before {
+  content: '';
+  z-index: -1;
+  background: linear-gradient(90deg, #101a28 2%, #101a28e6 30%, #101a2866 68%, #101a280a);
+}
+.project-select:hover .project-cover { transform: scale(1.025); }
+.project-mark {
+  display: block;
+  width: min(var(--mark-width), 70%);
+  height: auto;
+  filter: drop-shadow(0 2px 4px #0b1420b0);
+}
+.project-select small {
+  font-size: .88rem;
+  font-weight: 560;
+  line-height: 1.4;
+  text-shadow: 0 1px 4px #101a28;
+}
+.project-select.dream { --mark-width: 11.8rem; --cover-position: 41%; }
+.project-select.orbit { --mark-width: 8.75rem; --cover-position: 55%; }
+.project-select.arcade { --mark-width: 9.4rem; --cover-position: 70%; }
+
+.entry-wayfinding {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .35rem .8rem;
+  min-height: 2rem;
+  margin-right: 2.75rem;
+}
+.entry-wayfinding a {
+  padding-block: .45rem;
+  color: var(--muted);
+  font-size: .86rem;
+  text-decoration-color: var(--line);
+  text-underline-offset: .24em;
+}
+.entry-wayfinding a:hover { color: var(--ink); text-decoration-color: currentColor; }
+.entry-wayfinding .entry-location {
+  margin: 0;
+  border-left: 1px solid var(--line);
+  padding-left: .8rem;
+}
+.project-entry .project-title { margin: .95rem 0 1.1rem; }
+.project-title img {
+  display: block;
+  width: min(100%, var(--title-width));
+  height: auto;
+}
+.project-entry.dream { --title-width: 17rem; }
+.project-entry.orbit { --title-width: 12.75rem; }
+.project-entry.arcade { --title-width: 13rem; }
 
 .entry-art { margin: 1.55rem 0 1.2rem; }
+.project-entry .entry-art { margin-top: 1.1rem; }
 .entry-art img {
   display: block;
   width: 100%;
@@ -470,7 +543,11 @@ kbd {
   font-size: .76rem;
   color: var(--muted);
 }
-.portrait-art img { width: auto; max-width: 100%; max-height: 15rem; }
+.app-capture-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .65rem;
+}
 .entry-links { display: flex; align-items: center; flex-wrap: wrap; gap: .8rem 1.1rem; margin: 1.4rem 0; }
 .entry-links a, .walk-link { text-underline-offset: .28em; font-size: .91rem; font-weight: 630; }
 .entry-links a:hover, .walk-link:hover { color: var(--accent); }
