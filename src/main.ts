@@ -12,6 +12,7 @@ const browse = viewport.querySelector<HTMLAnchorElement>('[data-browse]')!;
 const overview = viewport.querySelector<HTMLButtonElement>('[data-overview]')!;
 const reset = viewport.querySelector<HTMLButtonElement>('[data-reset]')!;
 const stick = viewport.querySelector<HTMLElement>('[data-stick]')!;
+const paceButton = viewport.querySelector<HTMLButtonElement>('[data-walk-hold]')!;
 const nearby = viewport.querySelector<HTMLAnchorElement>('[data-nearby]')!;
 const nearbyText = nearby.querySelector('span')!;
 const walking = viewport.querySelector<HTMLButtonElement>('[data-walking]')!;
@@ -41,6 +42,7 @@ function updateHud() {
   overview.hidden = !ready || currentMode !== 'walk';
   reset.hidden = overview.hidden;
   stick.hidden = !ready || currentMode !== 'walk' || !touch.matches;
+  paceButton.hidden = stick.hidden;
   nearby.hidden = !ready || currentMode !== 'walk' || !currentNearby || guidedWalk;
   walking.hidden = !ready || !guidedWalk;
 }
@@ -76,7 +78,7 @@ async function loadIsland() {
     const { createIsland } = await import('./runtime/island');
     if (leftPage) return;
     island = createIsland({
-      canvas, viewport, stick,
+      canvas, viewport, stick, paceButton,
       ready: (available) => {
         ready = available;
         viewport.toggleAttribute('data-ready', available);

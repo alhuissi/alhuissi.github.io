@@ -11,7 +11,7 @@ npm ci
 npm run dev
 ```
 
-Open the URL Vite prints. Choose **Explore the island**, then use **WASD** or the arrow keys to move, drag to look, **E** to inspect a nearby landmark, and **R** to return to arrival. On touch screens, use the thumbstick. The **Projects** menu and island signs open the same project entries.
+Open the URL Vite prints. Choose **Explore the island**, then use **WASD** or the arrow keys to sprint and hold **Shift** to walk. Drag to look, press **E** to inspect a nearby landmark, or press **R** to return to arrival. On touch screens, steer with the thumbstick and hold **Walk** to slow down. The **Projects** menu and island signs open the same project entries.
 
 ## Build and serve
 

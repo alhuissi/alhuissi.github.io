@@ -1,10 +1,11 @@
-import { MathUtils, Vector2, Vector3 } from 'three';
+import { Vector2, Vector3 } from 'three';
 import { arrival } from '../destinations';
 import type { Point } from '../destinations';
 import { footRadius, heightAt, poolLevel, shoreFraction } from '../world/land';
 import type { Collisions } from '../world/collision';
 
-const stride = 5.6;
+export const walkSpeed = 3.5;
+const sprintSpeed = walkSpeed * 1.6;
 const gridSize = .90;
 const neighbors = [
   [-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1],
@@ -103,7 +104,7 @@ export class Walker {
   }
 
   get walkingRoute() { return this.path.length > 0; }
-  get pace() { return MathUtils.clamp(this.velocity.length() / stride, 0, 1); }
+  get moving() { return this.velocity.lengthSq() > 0; }
 
   reset() {
     const [x, z] = arrival;
@@ -128,7 +129,7 @@ export class Walker {
     return this.walkingRoute;
   }
 
-  update(dt: number, axes: Vector2, yaw: number) {
+  update(dt: number, axes: Vector2, yaw: number, walkHeld: boolean) {
     if (axes.lengthSq() > .001) {
       this.cancel();
       const c = Math.cos(yaw);
@@ -153,7 +154,7 @@ export class Walker {
       this.desired.set(0, 0);
     }
 
-    const speed = this.walkingRoute ? stride * .87 : stride;
+    const speed = this.walkingRoute || walkHeld ? walkSpeed : sprintSpeed;
     this.desired.multiplyScalar(speed);
     if (this.falling) {
       this.gravity -= 14.3 * dt;

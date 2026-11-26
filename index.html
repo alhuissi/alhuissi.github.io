@@ -106,10 +106,12 @@
       <div class="world-hud" hidden>
         <div class="hud-hint" aria-hidden="true">
           <span class="hint-key"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span> Move
+          <span class="hud-separator"></span> Hold <kbd>Shift</kbd> to walk
           <span class="hud-separator"></span> Drag to look
         </div>
         <div class="hud-actions">
           <a href="#controls" class="hud-button" aria-label="Controls"><span aria-hidden="true" class="help-glyph">?</span></a>
+          <button type="button" class="hud-button pace-button" data-walk-hold hidden aria-label="Hold to walk">Walk</button>
           <button type="button" class="hud-button" data-reset hidden aria-label="Return to arrival" title="Return to arrival">
             <svg class="icon" aria-hidden="true"><use href="#icon-reset"/></svg>
           </button>
@@ -123,7 +125,7 @@
         <kbd aria-hidden="true">E</kbd> <span></span>
       </a>
       <button class="walking" data-walking type="button" hidden aria-label="Stop assisted walk"></button>
-      <p class="visually-hidden" id="keyboard-controls">Use W A S D or the arrow keys to walk. Drag to look. Press E near a destination or R to return to arrival.</p>
+      <p class="visually-hidden" id="keyboard-controls">Use W A S D or the arrow keys to sprint. Hold Shift to walk. Drag to look. Press E near a destination or R to return to arrival.</p>
       <p class="visually-hidden" role="status" data-status></p>
     </section>
 
@@ -210,7 +212,7 @@
         <a class="entry-close" href="#world" aria-label="Close controls"><svg class="icon" aria-hidden="true"><use href="#icon-close"/></svg></a>
         <h2 id="controls-title">Controls</h2>
         <dl class="control-list">
-          <div><dt>Walk</dt><dd>W A S D or arrow keys. On touch screens use the thumbstick.</dd></div>
+          <div><dt>Move</dt><dd>Use W A S D, the arrow keys, or the thumbstick to sprint. Hold Shift or the Walk button to slow down.</dd></div>
           <div><dt>Look</dt><dd>Drag the scene to turn the camera.</dd></div>
           <div><dt>Inspect</dt><dd>Press E when a prompt is visible, or select any landmark or its sign.</dd></div>
           <div><dt>Return</dt><dd>Press R or use the reset button to return to arrival.</dd></div>

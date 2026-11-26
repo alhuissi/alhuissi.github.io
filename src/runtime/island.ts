@@ -16,7 +16,7 @@ import { IslandCamera } from './camera';
 import { IslandInput } from './input';
 import { Quality, reduceMotion } from './quality';
 import { disposeScene } from './resources';
-import { Walker } from './walking';
+import { Walker, walkSpeed } from './walking';
 
 export type Mode = 'overview' | 'walk';
 type ScreenPoint = { x: number; y: number };
@@ -24,6 +24,7 @@ type ScreenPoint = { x: number; y: number };
 type Interface = {
   canvas: HTMLCanvasElement;
   stick: HTMLElement;
+  paceButton: HTMLButtonElement;
   viewport: HTMLElement;
   ready: (ready: boolean) => void;
   mode: (mode: Mode) => void;
@@ -74,6 +75,8 @@ export function createIsland(ui: Interface) {
 
   const collisions = new Collisions();
   const clock = { value: 0 };
+  const traveler = createTraveler(walkSpeed, invalidate);
+  scene.add(traveler.root);
   buildAtmosphere(world, clock, quality.light);
   buildTerrain(world);
   buildLandmarks(world, collisions, clock);
@@ -82,8 +85,6 @@ export function createIsland(ui: Interface) {
   bakeSolids(world);
 
   const walker = new Walker(collisions);
-  const traveler = createTraveler();
-  scene.add(traveler.root);
   const rig = new IslandCamera(collisions);
   const bounds = Object.values(destinations).map((place) => {
     const [x, z] = place.landmark;
@@ -129,7 +130,11 @@ export function createIsland(ui: Interface) {
       mode = next;
       settling = .72;
       ui.mode(mode);
-      if (mode === 'overview') stopWalking();
+      if (mode === 'overview') {
+        stopWalking();
+        walker.velocity.set(0, 0);
+        input.clear();
+      }
     }
     if (focus) ui.canvas.focus({ preventScroll: true });
     invalidate();
@@ -174,7 +179,7 @@ export function createIsland(ui: Interface) {
     return id;
   }
 
-  const input = new IslandInput(ui.canvas, ui.stick, {
+  const input = new IslandInput(ui.canvas, ui.stick, ui.paceButton, {
     active, invalidate, reset,
     hover: (x, y) => ui.canvas.toggleAttribute('data-inspectable', landmarkAt(x, y) !== null),
     pick: (x, y) => {
@@ -249,7 +254,7 @@ export function createIsland(ui: Interface) {
       const steps = dt > .033 ? 2 : 1;
       let recovered = false;
       for (let step = 0; step < steps; step++) {
-        if (walker.update(dt / steps, input.axes, rig.yaw)) {
+        if (walker.update(dt / steps, input.axes, rig.yaw, input.walkHeld)) {
           recovered = true;
           break;
         }
@@ -269,18 +274,19 @@ export function createIsland(ui: Interface) {
       }
     }
     if (!reduced) clock.value += dt;
-    traveler.update(walker.position, walker.heading, walker.pace, dt, reduced, walker.falling);
     rig.update(dt, walker.position, mode === 'walk', clock.value, reduced, snap);
+    traveler.update(walker.position, walker.heading, dt, rig.camera,
+      input.walkHeld || Boolean(route), walker.falling, snap);
     snap = false;
     renderer.render(scene, rig.camera);
-    if (firstFrame) {
+    if (firstFrame && traveler.ready) {
       firstFrame = false;
       ui.ready(true);
     }
     setSigns();
 
     if (!reduced && quality.measure(elapsed)) resize();
-    if (!reduced || walker.falling || walker.walkingRoute || walker.pace > 0 || input.axes.lengthSq() > 0 || settling > 0) {
+    if (!reduced || walker.falling || walker.walkingRoute || walker.moving || input.axes.lengthSq() > 0 || settling > 0) {
       invalidate();
     } else {
       previous = 0;

@@ -1,6 +1,7 @@
 import { Vector2 } from 'three';
 
 const walkKeys = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight']);
+const paceKeys = new Set(['ShiftLeft', 'ShiftRight']);
 
 type Callbacks = {
   active: () => boolean;
@@ -17,8 +18,14 @@ export class IslandInput {
   private readonly held = new Set<string>();
   private readonly joystick = new Vector2();
   private readonly events = new AbortController();
+  private pacePointer: number | null = null;
 
-  constructor(canvas: HTMLCanvasElement, stick: HTMLElement, actions: Callbacks) {
+  get walkHeld() {
+    return this.pacePointer !== null || this.held.has('ShiftLeft') || this.held.has('ShiftRight');
+  }
+
+  constructor(canvas: HTMLCanvasElement, private readonly stick: HTMLElement,
+    private readonly paceButton: HTMLButtonElement, actions: Callbacks) {
     const options = { signal: this.events.signal };
     const pressed = (...keys: string[]) => keys.some((key) => this.held.has(key));
     const read = () => {
@@ -31,7 +38,7 @@ export class IslandInput {
 
     canvas.addEventListener('keydown', (event) => {
       if (event.altKey || event.ctrlKey || event.metaKey || event.isComposing || !actions.active()) return;
-      if (walkKeys.has(event.code)) {
+      if (walkKeys.has(event.code) || paceKeys.has(event.code)) {
         event.preventDefault();
         this.held.add(event.code);
         read();
@@ -49,6 +56,24 @@ export class IslandInput {
     }, options);
     canvas.addEventListener('blur', () => { this.held.clear(); read(); }, options);
     window.addEventListener('blur', () => this.clear(), options);
+
+    paceButton.addEventListener('pointerdown', (event) => {
+      if (event.button !== 0 || this.pacePointer !== null || !actions.active()) return;
+      event.preventDefault();
+      this.pacePointer = event.pointerId;
+      paceButton.setPointerCapture(event.pointerId);
+      paceButton.setAttribute('data-held', '');
+      actions.invalidate();
+    }, options);
+    const releasePace = (event: PointerEvent) => {
+      if (this.pacePointer !== event.pointerId) return;
+      this.pacePointer = null;
+      paceButton.removeAttribute('data-held');
+      actions.invalidate();
+    };
+    paceButton.addEventListener('pointerup', releasePace, options);
+    paceButton.addEventListener('pointercancel', releasePace, options);
+    paceButton.addEventListener('lostpointercapture', releasePace, options);
 
     let drag: { id: number; startX: number; startY: number; lastX: number; lastY: number; moving: boolean } | null = null;
     canvas.addEventListener('pointerdown', (event) => {
@@ -121,6 +146,13 @@ export class IslandInput {
     this.held.clear();
     this.joystick.set(0, 0);
     this.axes.set(0, 0);
+    this.stick.querySelector('span')!.style.removeProperty('transform');
+    const pointer = this.pacePointer;
+    this.pacePointer = null;
+    this.paceButton.removeAttribute('data-held');
+    if (pointer !== null && this.paceButton.hasPointerCapture(pointer)) {
+      this.paceButton.releasePointerCapture(pointer);
+    }
   }
 
   dispose() {

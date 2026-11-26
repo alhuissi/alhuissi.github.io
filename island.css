@@ -312,6 +312,8 @@ kbd {
   text-decoration: none;
 }
 .hud-button:hover { border-color: var(--line); background: rgb(17 26 36 / .45); }
+.pace-button { border-color: var(--line); touch-action: none; user-select: none; }
+.pace-button[data-held] { color: var(--night); background: var(--gold); border-color: var(--gold); }
 .hud-button .icon { width: 1.25rem; height: 1.25rem; }
 .help-glyph {
   display: grid;

@@ -1,84 +1,77 @@
 import {
-  CapsuleGeometry, Color, Group, Mesh, PlaneGeometry, ShaderMaterial, SphereGeometry,
-  Vector3,
+  Color, Group, MathUtils, Mesh, NearestFilter, PlaneGeometry, ShaderMaterial,
+  Sprite, SpriteMaterial, SRGBColorSpace, TextureLoader, Vector3,
 } from 'three';
-import { box, column, lanternMaterial, solid, standard, volume } from './geometry';
+import type { PerspectiveCamera } from 'three';
 import { heightAt } from './land';
 
-function child(parent: Group, x: number, y: number, z: number) {
-  const group = new Group();
-  group.position.set(x, y, z);
-  parent.add(group);
-  return group;
+const rows = 8;
+const strideFrames = 8;
+const framePixels = 64;
+const bodySize = 2.23;
+const directionBoundary = Math.SQRT2 - 1;
+
+// Dream Ocean's four-unit tiles, 1.8-unit sprite and distance-driven stride.
+const referenceWalkSpeed = 4;
+const referenceBodySize = 1.8;
+const stridePerBody = 2.0625;
+
+type Gait = 'idle' | 'walk' | 'sprint';
+
+function facingRow(x: number, z: number, camera: PerspectiveCamera, previous: number) {
+  const matrix = camera.matrixWorld.elements;
+  const right = x * matrix[0] + z * matrix[2];
+  const down = -x * matrix[2] + z * matrix[0];
+  const horizontal = Math.abs(right);
+  const vertical = Math.abs(down);
+  const boundary = directionBoundary * (previous % 2 === 1 ? .72 : 1);
+
+  // Both atlases are ordered S, SW, W, NW, N, NE, E, SE.
+  if (Math.min(horizontal, vertical) >= Math.max(horizontal, vertical) * boundary) {
+    if (down < 0) return right < 0 ? 3 : 5;
+    return right < 0 ? 1 : 7;
+  }
+  return horizontal > vertical ? (right < 0 ? 2 : 6) : (down < 0 ? 4 : 0);
 }
 
-export function createTraveler() {
-  const root = new Group();
-  const rig = child(root, 0, 0, 0);
-  const ink = standard('#343a48');
-  const jacket = standard('#6b8181');
-  const lining = standard('#def0db');
-  const linen = standard('#dcbb87');
-  const leather = standard('#835a4d');
-  const coral = standard('#c8654e');
-  const latch = lanternMaterial(0xeab86e, .36);
-  const visor = standard('#3e6076', .32, .24);
-
-  const coat = column(rig, jacket, .28, .37, .66, 0, .94, 0, 9);
-  coat.scale.z = .73;
-  const collar = column(rig, linen, .21, .27, .19, 0, 1.25, 0, 12);
-  collar.scale.z = .86;
-  const face = solid(rig, new SphereGeometry(.242, 20, 13), linen, 0, 1.46, .027);
-  face.scale.set(1.05, 1.10, 1);
-  const helmet = solid(rig, new SphereGeometry(.264, 22, 13, 0, Math.PI * 2, 0, Math.PI * .62),
-    jacket, 0, 1.48, 0);
-  helmet.scale.set(1.09, 1.12, 1.06);
-  const goggles = solid(rig, new SphereGeometry(.231, 18, 11), ink, 0, 1.45, .126);
-  goggles.scale.set(.91, .52, .59);
-  for (const side of [-1, 1]) {
-    const lens = solid(rig, new SphereGeometry(.083, 11, 8), visor, side * .099, 1.46, .228);
-    lens.scale.set(1.14, 1, .48);
-    const shine = solid(rig, new SphereGeometry(.026, 9, 7), lining, side * .095 - .019, 1.489, .256);
-    shine.scale.z = .29;
-    const cup = column(rig, leather, .087, .087, .042, side * .25, 1.46, -.04);
-    cup.rotation.z = Math.PI / 2;
-  }
-
-  column(rig, coral, .23, .24, .10, 0, 1.278, 0, 13);
-  const scarf = child(rig, -.17, 1.27, -.15);
-  scarf.rotation.y = .13;
-  const fabric = volume(scarf, coral, [[0, 0], [-.11, .026], [-.33, -.11], [-.47, -.076], [-.54, -.15],
-    [-.36, -.23], [-.15, -.095], [0, -.065]], .032);
-  const roll = solid(rig, new CapsuleGeometry(.18, .31, 5, 11), leather, 0, 1.01, -.22);
-  roll.scale.set(1.12, .83, .64);
-  column(rig, ink, .14, .14, .39, 0, 1.21, -.26, 11).rotation.z = Math.PI / 2;
-  for (const x of [-.127, .127]) box(rig, linen, .064, .41, .065, x, 1.02, -.343);
-  box(rig, latch, .12, .13, .053, .02, .99, -.35);
-  box(rig, latch, .14, .135, .07, .034, 1.05, .21);
-  box(rig, ink, .49, .091, .38, 0, .688, 0);
-
-  const limbs = (side: number) => {
-    const leg = child(rig, side * .163, .66, 0);
-    const sleeve = child(rig, side * .264, 1.135, .0);
-    sleeve.rotation.z = side * .19;
-    solid(leg, new CapsuleGeometry(.081, .36, 4, 8), ink, 0, -.23, 0);
-    const shoe = solid(leg, new SphereGeometry(.128, 13, 8), leather, 0, -.53, .073);
-    shoe.scale.set(.77, .73, 1.42);
-    solid(sleeve, new CapsuleGeometry(.086, .22, 4, 9), jacket, side * .047, -.16, 0);
-    solid(sleeve, new SphereGeometry(.074, 11, 7), linen, side * .059, -.326, .017);
-    return { leg, arm: sleeve };
-  };
-  const left = limbs(-1);
-  const right = limbs(1);
-
-  root.traverse((object) => {
-    if (object instanceof Mesh) {
-      object.castShadow = false;
-      object.receiveShadow = false;
-    }
+function createAtlas(loader: TextureLoader, name: string, columns: number, onLoad: () => void) {
+  let loaded = false;
+  const texture = loader.load(new URL(`./island-media/andi/${name}.webp`, document.baseURI).href, () => {
+    loaded = true;
+    onLoad();
   });
-  const shadow = new Mesh(new PlaneGeometry(2.7, 2.7), new ShaderMaterial({
-    uniforms: { opacity: { value: .5 }, tint: { value: new Color('#201c28') } },
+  texture.colorSpace = SRGBColorSpace;
+  texture.magFilter = NearestFilter;
+  texture.minFilter = NearestFilter;
+  texture.generateMipmaps = false;
+  texture.repeat.set(1 / columns, 1 / rows);
+
+  // Cut-out pixels participate in the same depth buffer as the island.
+  const sprite = new Sprite(new SpriteMaterial({ map: texture, transparent: false, alphaTest: .5, toneMapped: false }));
+  sprite.name = `Andi ${name}`;
+  sprite.scale.set(bodySize, bodySize, 1);
+  sprite.center.set(.5, 1 / framePixels);
+  sprite.position.y = .044;
+  sprite.visible = false;
+  return {
+    sprite,
+    get loaded() { return loaded; },
+    pose(direction: number, frame: number) {
+      texture.offset.set(frame / columns, (rows - 1 - direction) / rows);
+    },
+  };
+}
+
+export function createTraveler(walkSpeed: number, invalidate: () => void) {
+  const root = new Group();
+  root.name = 'Andi';
+  const loader = new TextureLoader();
+  const walking = createAtlas(loader, 'walk', strideFrames + 1, invalidate);
+  const sprinting = createAtlas(loader, 'sprint', strideFrames, invalidate);
+  root.add(walking.sprite, sprinting.sprite);
+
+  const shadow = new Mesh(new PlaneGeometry(1.62, 1.38), new ShaderMaterial({
+    uniforms: { tint: { value: new Color('#201c28') } },
     transparent: true, depthWrite: false, toneMapped: false,
     vertexShader: `
       varying vec2 coords;
@@ -88,38 +81,63 @@ export function createTraveler() {
       }
     `,
     fragmentShader: `
-      uniform float opacity;
       uniform vec3 tint;
       varying vec2 coords;
       void main() {
         float radius = length((coords - .5) * vec2(2.2, 2.6));
-        gl_FragColor = vec4(tint, opacity * (1.0 - smoothstep(.13, .87, radius)));
+        gl_FragColor = vec4(tint, .57 * (1.0 - smoothstep(.09, .91, radius)));
         #include <colorspace_fragment>
       }
     `,
   }));
-  shadow.rotation.x = -Math.PI / 2;
-  shadow.position.y = .044;
+  shadow.position.y = .049;
   root.add(shadow);
   const planeNormal = new Vector3(0, 0, 1);
   const groundNormal = new Vector3();
-  let step = 0;
+  const referenceScale = referenceWalkSpeed / walkSpeed;
+  let direction = 4;
+  let gait: Gait = 'idle';
+  let stride = 0;
+  let initialized = false;
 
   return {
     root,
-    update(position: Vector3, heading: number, pace: number, dt: number, reduced: boolean, falling: boolean) {
+    get ready() { return walking.loaded; },
+    update(position: Vector3, heading: number, dt: number, camera: PerspectiveCamera,
+      walkingPace: boolean, falling: boolean, teleport: boolean) {
+      const dx = position.x - root.position.x;
+      const dz = position.z - root.position.z;
       root.position.copy(position);
-      rig.rotation.y = heading;
-      step += dt * 9.8 * pace;
-      const swing = Math.sin(step) * pace;
-      left.leg.rotation.x = swing * .57;
-      right.leg.rotation.x = -swing * .57;
-      left.arm.rotation.x = -swing * .44;
-      right.arm.rotation.x = swing * .44;
-      rig.position.y = reduced ? 0 : Math.abs(swing) * .075;
-      fabric.rotation.z = reduced ? 0 : Math.sin(step * .81 + .7) * pace * .22;
-      scarf.rotation.x = reduced ? 0 : -.22 - Math.abs(swing) * .21;
-      shadow.visible = !falling;
+
+      const distance = initialized && !teleport && !falling ? Math.hypot(dx, dz) : 0;
+      const speed = distance / dt;
+      initialized = true;
+      const moving = speed > .015;
+      direction = facingRow(moving ? dx : Math.sin(heading), moving ? dz : Math.cos(heading), camera, direction);
+      const sprintThreshold = walkSpeed * (gait === 'sprint' ? 1.035 : 1.075);
+      gait = !moving ? 'idle' : walkingPace || speed < sprintThreshold ? 'walk' : 'sprint';
+
+      if (gait === 'idle') {
+        stride = 0;
+      } else {
+        // Use traveled distance and preserve phase across the walk and sprint switch.
+        const speedRatio = speed * referenceScale / (2 * referenceBodySize);
+        const strideScale = MathUtils.clamp(Math.sqrt(speedRatio), .7, 2.2);
+        const cycle = stridePerBody * referenceBodySize * strideScale;
+        stride = (stride + distance * referenceScale / cycle) % 1;
+      }
+
+      const useSprint = gait === 'sprint' && sprinting.loaded;
+      const frame = Math.floor(stride * strideFrames);
+      walking.sprite.visible = walking.loaded && !useSprint;
+      sprinting.sprite.visible = useSprint;
+      if (useSprint) {
+        sprinting.pose(direction, frame);
+      } else {
+        walking.pose(direction, gait === 'idle' ? 0 : frame + 1);
+      }
+
+      shadow.visible = walking.loaded && !falling;
       const { x, z } = position;
       groundNormal.set(
         heightAt(x - .29, z) - heightAt(x + .29, z),

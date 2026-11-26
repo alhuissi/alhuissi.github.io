@@ -12,6 +12,8 @@ The island is the homepage. The opening composition places the ringed planet abo
 
 Work takes place outdoors in Phase 1. Each location opens a short entry, with project links where they apply. The island’s shoreline supports fall and recovery. Exploration uses walking, terrain grounding and camera orbit.
 
+Andi from Dream Ocean is the playable character. He uses the game’s eight-direction walk and sprint art, with the same distance-driven stride and camera-relative facings. As in the game’s default controls, movement sprints unless the pace modifier is held. Assisted routes walk.
+
 ## Architecture
 
 | Area | Source |
@@ -26,10 +28,11 @@ Work takes place outdoors in Phase 1. Each location opens a short entry, with pr
 
 ## References and assets
 
-Reviewed the target repository and its earlier Three.js worlds, The Deval’s island movement and portal navigation, Pocket Orbit’s surface movement, camera damping and layered water, the Dream Ocean website’s capture direction, and the HanziZap app and website. The island uses original geometry, materials and shaders. The movement and water references informed the design without importing their implementations or game engines.
+Reviewed the target repository and its earlier Three.js worlds, The Deval’s island movement and portal navigation, Pocket Orbit’s surface movement, camera damping and layered water, the Dream Ocean website’s capture direction, and the HanziZap app and website. The environment uses original geometry, materials and shaders.
 
 | Asset | Provenance |
 | --- | --- |
+| Andi locomotion sprites | Unmodified Dream Ocean production atlases. See [source and attribution notes](../island-media/andi/SOURCES.txt). |
 | Dream Ocean still | Kuroshore gameplay from `assets/dream/kuroshore.webp` in the pre-existing target checkout. |
 | Pocket Orbit still | Rell system flight gameplay from `assets/orbit/flight.webp` in the pre-existing target checkout, originally from Pocket Orbit. |
 | HanziZap still | The Sprint capture from `assets/work/hanzizap-sprint.webp` in the pre-existing target checkout, originally from HanziZap. |
@@ -51,14 +54,16 @@ Verified the checked-in static build and the Vite source preview in Chrome. Capt
 
 The local desktop run showed the first rendered frame in roughly 0.4 seconds. Chrome ran at a 60 Hz animation cadence in the desktop and landscape touch samples on the development machine. The JavaScript totals about 170 kB gzipped, including Three.js. The six public HTTPS links responded with HTTP 200. The email action uses a mail link.
 
+Andi’s pass checked rendered atlas frames in Chrome for all eight facings, keyboard sprint and walk, camera-relative idle, guided walking, and simultaneous steering and pace control in touch emulation. The desktop and portrait fallback images were recaptured with Andi.
+
 ## Manual playtest checklist
 
 - [ ] Open the build from an ordinary static HTTP server. Check the opening composition and all three signs on a wide desktop and a portrait phone.
-- [ ] Choose **Explore the island** and start, stop, and turn with both WASD and the arrow keys. Drag to look in both directions. Hold forward against the workshop door and try sliding past a corner.
+- [ ] Choose **Explore the island** and start, stop, and turn with both WASD and the arrow keys. Hold **Shift** to switch to Andi’s walk, release it to sprint, and check that his feet stop when blocked by the workshop door. Drag to look in both directions.
 - [ ] Follow each trail. At a landmark, press **E** or select its prompt. Click the models and their signs from the island view.
 - [ ] Use **Walk to…** on each entry. Take back control with a movement key or the **Stop** button. Visit the observatory via the uphill trail.
 - [ ] Walk off the seaward edge from arrival and confirm the traveler returns. Press **R** and use **Island view**.
-- [ ] On a phone, steer with the thumbstick, drag to look, tap the arcade sign and inspect its entry. Check the HUD in portrait and landscape.
+- [ ] On a phone, steer with the thumbstick and hold **Walk** with the other thumb. Drag to look, tap the arcade sign, and inspect its entry. Check the HUD in portrait and landscape.
 - [ ] Use the **Projects** and **About** links, Tab through a journal entry, close with Escape, and use browser Back. Load a direct URL with `#dream-ocean` appended.
 - [ ] Follow the Dream Ocean website and Steam links, the Pocket Orbit browser demo and Steam links, and the HanziZap App Store link. Confirm GitHub and the email link in About.
 - [ ] Repeat with reduced motion, then with WebGL unavailable. Disable JavaScript and browse via the static project directory.

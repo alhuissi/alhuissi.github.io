@@ -1,0 +1,27 @@
+Andi, Dream Ocean · exploration sprites
+
+These WebP images are byte-for-byte copies of the Dream Ocean runtime atlases
+from the alhuissi/tactics-rpg-react-template checkout at e06bfdec3. Source paths
+are relative to that checkout.
+
+walk.webp
+  public/assets/images/spritesheets/playables/andi/walk_8dir/walk_8dir_lpc.webp
+  576 × 512. Four cardinal rows match Andi’s original LPC walking cells.
+  The diagonals are Dream Ocean artwork based on those cells.
+
+sprint.webp
+  public/assets/images/spritesheets/playables/andi/run_8dir.webp
+  512 × 512. Use the current production atlas with the original north upper
+  body and the corrected north stride. Its source includes editable cells
+  and a provenance record under asset-sources/images/spritesheets/playables/andi/run/.
+
+The game describes the base character as a Universal LPC export. The upstream
+project and original art sources are listed at:
+  https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator
+  https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles
+
+See docs/dream-ocean/art/HERO_SPRITES.md, ART_LICENSES.md and
+SPRITE_PROVENANCE_AUDIT.md in the Dream Ocean checkout. The audit records
+incomplete layer-level credits for Andi’s original LPC sheet and diagonal
+derivatives. Their individual attribution and applicable license notices
+remain to be resolved for public release.
