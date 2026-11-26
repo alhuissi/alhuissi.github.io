@@ -5,8 +5,8 @@
 The island is the homepage. The opening composition places the ringed planet above a terraced island, with Alfredo’s introduction alongside it. Close to ground level, lamplight and trails lead past conifers, reeds and rock outcrops to the workshop. The four surrounding landmarks each have a silhouette visible from several angles.
 
 - **Workshop.** An angular electronics and music lab anchors the central trail. Cyan edge lighting, exposed coolant tubes and a rotating roof gyroscope frame the warm control-room window. Alfredo’s teal mark forms the crystal suspended inside the gyroscope. About links to his projects, email, X and GitHub.
-- **Dream Ocean.** A weathered stone gateway, cool foliage and a waterfall connect the site to the game’s coastal imagery. The journal shows Andi lining up Tidal Collapse in Citryan.
-- **Pocket Orbit.** A compact original spacecraft sits on a marked launchpad with approach lights. The journal shows a shuttle approaching Arven from space and links to the browser demo and Steam.
+- **Dream Ocean.** A weathered stone gateway, cool foliage and a waterfall connect the site to the game’s coastal imagery. The seven heroes appear in the rippling portal in two layers that shift with the viewer. The journal shows Andi lining up Tidal Collapse in Citryan.
+- **Pocket Orbit.** The game’s household shuttle sits on a marked launchpad with approach lights. The journal shows the shuttle approaching Arven from space and links to the browser demo and Steam.
 - **HanziZap.** The arcade uses a warm sign, ribbed roofs, lanterns and two cabinets. The journal shows Sprint and Daily Zap rounds side by side.
 - **Observatory.** A path climbs behind the workshop to a copper dome and telescope. The telescope points across the sky of the island.
 
@@ -29,13 +29,15 @@ Andi from Dream Ocean is the playable character. He uses the game’s eight-dire
 
 ## References and assets
 
-Reviewed the target repository and its earlier Three.js worlds, The Deval’s island movement and portal navigation, Pocket Orbit’s surface movement, camera damping and layered water, the Dream Ocean website’s capture direction, and the HanziZap app and website. The environment uses original geometry, materials and shaders.
+Reviewed the target repository and its earlier Three.js worlds, The Deval’s island movement and portal navigation, Pocket Orbit’s surface movement, camera damping and layered water, the Dream Ocean website’s capture direction, and the HanziZap app and website. The island’s architecture and terrain use original geometry, materials and shaders. The gateway and launchpad incorporate art from the games.
 
 | Asset | Provenance |
 | --- | --- |
 | Andi locomotion sprites | Unmodified Dream Ocean production atlases. See [source and attribution notes](../island-media/andi/SOURCES.txt). |
 | Dream Ocean media | The Dream Ocean site’s `assets/dream-ocean-wordmark.webp` and a November 26, 2026 gameplay capture from the `tactical-tidal-collapse` preset of the local game build at `c13fc0092`, using the approved Aquamarine battle HUD. |
+| Dream Ocean reflections | Mirrored front-facing idle cells from the game at `c13fc0092`. Andi uses the south row of the exploration walk atlas. Chloe, Melissa, Gabriel, Gaspar, and Milo use the south walk row of their dressed LPC sheets. Sun uses the south row of `sun/actions/idle_8dir.webp`, scaled to the portal party. For the human sprites, see the [Universal LPC source and attribution notes](../island-media/andi/SOURCES.txt). |
 | Pocket Orbit media | The official `src/assets/brand/pocket-orbit-logo.webp` and gameplay capture `welcome/arven-orbit.webp` from the Pocket Orbit checkout. |
+| Pocket Orbit shuttle | The `title-ship` group rendered at `78dd5a87`, which uses the same `HouseholdCraft`, `CraftCanopy`, and flight deck as the player shuttle. The glTF export keeps the geometry, paint inputs, and landing gear, uses the island’s lighting for the pad, and compresses mesh data losslessly. |
 | HanziZap media | The original dark wordmark paths from `Artwork/AppStore/Marketing/source/en-US-search-results.svg`, and raw inner-display Sprint and Daily Zap captures from `Artwork/AppStore/Duo/raw/inner/en-US/` in the HanziZap checkout. The stills are cropped to the app content. |
 | Alhuissi mark | Traced from Alfredo’s supplied `logo-fondo-negro-1000.png` for the header, favicon, workshop sign and roof crystal. |
 | Workshop and island posters | WebP captures of the shipped island in Chrome with the interface hidden. The workshop’s geometry, sign and lighting are built in Three.js. |
@@ -46,6 +48,7 @@ Reviewed the target repository and its earlier Three.js worlds, The Deval’s is
 
 - A small entry module initializes conventional navigation. The scene and Three.js are separate lazy modules. A viewport-matched WebP poster fills the first view while the scene initializes.
 - Animated water and the portal use shader motion. Grass is instanced, landmark parts with shared materials are merged, and a cached directional shadow map shades the static scene. The traveler has a separate contact shadow.
+- The reflection layers share one small atlas and use the portal’s existing draw. The shuttle’s glTF and loader load asynchronously alongside the island.
 - Touch and lower-core devices use fewer grass and dust instances, a smaller shadow map, and a lower render-pixel budget. Sustained slow frames reduce render scale once per session.
 - The world pauses behind the journal and when the tab is hidden. Reduced motion freezes ambient time and removes camera transitions. A context loss restores the poster and project navigation while the device recovers.
 - Project travel stops at each outdoor approach. The journal links lead to the game or app itself.
@@ -55,7 +58,7 @@ Reviewed the target repository and its earlier Three.js worlds, The Deval’s is
 
 Verified the checked-in static build and the Vite source preview in Chrome. Captured the overview and close views at the gateway, launchpad, arcade and observatory. Tested keyboard movement, a blocked workshop approach, drag camera, assisted routes, landmark selection, cliff recovery, journal focus and history, WebGL restoration, and GPU resource release. Touch testing used Chrome emulation in portrait, compact portrait, and landscape. The WebGL and JavaScript fallbacks kept project navigation available.
 
-The local desktop run showed the first rendered frame in roughly 0.4 seconds. Chrome ran at a 60 Hz animation cadence in the desktop and landscape touch samples on the development machine. The JavaScript totals about 170 kB gzipped, including Three.js. The six public HTTPS links responded with HTTP 200. The email action uses a mail link.
+In the Phase 1 baseline, the local desktop run showed the first rendered frame in roughly 0.4 seconds and Chrome ran at a 60 Hz animation cadence in the desktop and landscape touch samples. The current build has about 185 kB of gzipped JavaScript for the entry point and island renderer, plus a separate 22 kB gzipped shuttle loader. The email action uses a mail link.
 
 Andi’s pass checked rendered atlas frames in Chrome for all eight facings, keyboard sprint and walk, camera-relative idle, guided walking, and simultaneous steering and pace control in touch emulation. The desktop and portrait fallback images were recaptured with Andi.
 
@@ -64,6 +67,7 @@ Andi’s pass checked rendered atlas frames in Chrome for all eight facings, key
 - [ ] Open the build from an ordinary static HTTP server. Check the opening composition and all three signs on a wide desktop and a portrait phone.
 - [ ] Choose **Explore the island** and start, stop, and turn with both WASD and the arrow keys. Hold **Shift** to switch to Andi’s walk, release it to sprint, and check that his feet stop when blocked by the workshop door. Drag to look in both directions.
 - [ ] Follow each trail. At a landmark, press **E** or select its prompt. Click the models and their signs from the island view.
+- [ ] View the Dream Ocean gateway straight on, then turn sideways to check the two reflection layers. Walk to Pocket Orbit and check the shuttle’s livery, canopy, and contact with the pad.
 - [ ] Use **Walk to…** on each entry. Take back control with a movement key or the **Stop** button. Visit the observatory via the uphill trail.
 - [ ] Walk off the seaward edge from arrival and confirm the traveler returns. Press **R** and use **Island view**.
 - [ ] On a phone, steer with the thumbstick and hold **Walk** with the other thumb. Drag to look, tap the arcade sign, and inspect its entry. Check the HUD in portrait and landscape.

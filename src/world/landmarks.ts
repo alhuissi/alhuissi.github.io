@@ -1,7 +1,6 @@
 import {
-  CapsuleGeometry, DoubleSide, DodecahedronGeometry, ExtrudeGeometry, Group,
-  LatheGeometry, Mesh, Shape, ShapeGeometry,
-  SphereGeometry, TorusGeometry, Vector2, Vector3,
+  DodecahedronGeometry, ExtrudeGeometry, Group, Mesh, Shape, ShapeGeometry,
+  SphereGeometry, TorusGeometry, Vector3,
 } from 'three';
 import type { Material, Object3D } from 'three';
 import { destinations } from '../destinations';
@@ -60,7 +59,7 @@ function window(parent: Object3D, x: number, y: number, z: number, width: number
   box(parent, shadowWood, width * .93, .05, .044, x, y + height * .48, z + .047);
 }
 
-function dreamGateway(root: Group, clock: WorldClock, collisions: Collisions) {
+function dreamGateway(root: Group, clock: WorldClock, collisions: Collisions, onReady: () => void) {
   const yaw = .29;
   const gate = lodge(root, 'dream-ocean', yaw);
   const [x, y, z] = gate.position;
@@ -83,8 +82,7 @@ function dreamGateway(root: Group, clock: WorldClock, collisions: Collisions) {
     .moveTo(-span, .25).lineTo(span, .25).lineTo(span, spring)
     .quadraticCurveTo(span, spring + 1.2, 0, spring + rise)
     .quadraticCurveTo(-span, spring + 1.2, -span, spring).closePath();
-  const view = new Mesh(new ShapeGeometry(opening, 36), portalSurface(clock));
-  view.material.side = DoubleSide;
+  const view = new Mesh(new ShapeGeometry(opening, 36), portalSurface(clock, onReady));
   view.position.z = .17;
   gate.add(view);
 
@@ -131,57 +129,7 @@ function dreamGateway(root: Group, clock: WorldClock, collisions: Collisions) {
   collisions.add(x, z, 5.4, 1.75, y - .5, 5.65, yaw);
 }
 
-function spacecraft(parent: Group) {
-  const craft = new Group();
-  craft.position.set(.15, 1.18, -.35);
-  craft.rotation.y = -.77;
-  craft.scale.setScalar(1.15);
-  parent.add(craft);
-  const enamel = standard('#eee6ce', .36, .13);
-  const underside = standard('#616b71', .41, .28);
-  const highVisibility = standard('#ca6744', .42, .14);
-  const canopy = standard('#253f57', .23, .41);
-  const pane = standard('#668d9b', .24, .2);
-
-  const profile = [[.01, -1.81], [.52, -1.72], [.73, -1.35], [.83, -.76], [.83, .18], [.65, .85],
-    [.44, 1.35], [.23, 1.66], [.01, 1.82]].map(([radius, length]) => new Vector2(radius, length));
-  const fuselage = solid(craft, new LatheGeometry(profile, 26), enamel);
-  fuselage.rotation.x = Math.PI / 2;
-  fuselage.scale.z = .78;
-  const spine = solid(craft, new SphereGeometry(1, 22, 11), underside, 0, -.1, -.21);
-  spine.scale.set(.70, .61, 1.49);
-  const windscreen = solid(craft, new SphereGeometry(1, 25, 13), canopy, 0, .49, .43);
-  windscreen.scale.set(.63, .45, .91);
-  const reflection = solid(craft, new SphereGeometry(1, 18, 9), pane, -.195, .714, .68);
-  reflection.scale.set(.29, .16, .46);
-  reflection.rotation.z = -.37;
-  const collar = solid(craft, new TorusGeometry(.72, .086, 6, 28), highVisibility, 0, 0, -.99);
-  collar.scale.y = .79;
-  const cockpitBand = solid(craft, new TorusGeometry(.6, .032, 6, 25), enamel, 0, .42, .41);
-  cockpitBand.rotation.y = Math.PI / 2;
-  cockpitBand.scale.set(.74, .84, .77);
-
-  for (const side of [-1, 1]) {
-    const wing = volume(craft, enamel, [[side * .5, -.66], [side * 1.59, .78], [side * 1.52, 1.29],
-      [side * .56, .97]], .16, 0, -.32, 0, .025);
-    wing.rotation.x = -Math.PI / 2;
-    const fin = volume(craft, highVisibility, [[side * 1.29, .61], [side * 1.62, .8], [side * 1.53, 1.29],
-      [side * 1.26, 1.19]], .163, 0, -.32, 0, .014);
-    fin.rotation.x = -Math.PI / 2;
-    const tank = solid(craft, new CapsuleGeometry(.24, .91, 5, 12), underside, side * 1.01, -.19, -.85);
-    tank.rotation.x = Math.PI / 2;
-    const thruster = column(craft, darkMetal, .22, .29, .21, side * 1.01, -.19, -1.48, 14);
-    thruster.rotation.x = Math.PI / 2;
-    beam(craft, underside, new Vector3(side * .55, -.31, .39), new Vector3(side * .77, -.80, .60), .11);
-    box(craft, darkMetal, .32, .12, .58, side * .77, -.81, .60);
-    solid(craft, new SphereGeometry(.076, 8, 6), side === 1 ? warmGlass : softGlass, side * 1.57, -.31, -.72);
-  }
-  volume(craft, enamel, [[0, .12], [.34, .92], [1.0, 1.38], [1.37, .16]], .075,
-    0, .31, -.19, .022).rotation.y = Math.PI / 2;
-  box(craft, darkMetal, .49, .11, .55, 0, -.79, -1.23);
-}
-
-function launchpad(root: Group, collisions: Collisions) {
+function launchpad(root: Group, collisions: Collisions, onReady: () => void) {
   const pad = lodge(root, 'pocket-orbit', .15);
   const [x, y, z] = pad.position;
   const concrete = standard('#8c857d');
@@ -211,7 +159,7 @@ function launchpad(root: Group, collisions: Collisions) {
     box(pad, copper, .58, .10, .75, -3.54, .28, dz);
     box(pad, slate, .26, .162, .022, -3.54, .10, dz + .37);
   }
-  spacecraft(pad);
+  void import('./pocketOrbitShuttle').then(({ addPocketOrbitShuttle }) => addPocketOrbitShuttle(pad, onReady));
   collisions.add(x, z, 5.3, 5.25, y - .42, 3.4, .15);
 }
 
@@ -360,10 +308,10 @@ function observatory(root: Group, collisions: Collisions) {
   collisions.add(x, z, 3.57, 3.63, y - .61, 5.3, yaw);
 }
 
-export function buildLandmarks(root: Group, collisions: Collisions, clock: WorldClock) {
+export function buildLandmarks(root: Group, collisions: Collisions, clock: WorldClock, onReady: () => void) {
   const updateWorkshop = buildWorkshop(root, collisions, clock);
-  dreamGateway(root, clock, collisions);
-  launchpad(root, collisions);
+  dreamGateway(root, clock, collisions, onReady);
+  launchpad(root, collisions, onReady);
   arcade(root, collisions);
   observatory(root, collisions);
   return updateWorkshop;

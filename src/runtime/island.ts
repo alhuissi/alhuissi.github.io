@@ -80,7 +80,10 @@ export function createIsland(ui: Interface) {
   scene.add(traveler.root);
   buildAtmosphere(world, clock, quality.light);
   buildTerrain(world);
-  const updateLandmarks = buildLandmarks(world, collisions, clock);
+  const updateLandmarks = buildLandmarks(world, collisions, clock, () => {
+    renderer.shadowMap.needsUpdate = true;
+    invalidate();
+  });
   const projectSigns = buildProjectSigns(world, collisions, invalidate);
   guideLights(world);
   buildVegetation(world, collisions, clock, quality.light);

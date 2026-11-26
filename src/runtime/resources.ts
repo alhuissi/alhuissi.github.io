@@ -1,4 +1,4 @@
-import { BufferGeometry, Material, Mesh, Texture } from 'three';
+import { BufferGeometry, Material, Mesh, ShaderMaterial, Texture } from 'three';
 import type { Object3D } from 'three';
 
 export function disposeScene(root: Object3D) {
@@ -17,6 +17,11 @@ export function disposeScene(root: Object3D) {
       materials.add(material);
       for (const value of Object.values(material)) {
         if (value instanceof Texture) textures.add(value);
+      }
+      if (material instanceof ShaderMaterial) {
+        for (const uniform of Object.values(material.uniforms)) {
+          if (uniform.value instanceof Texture) textures.add(uniform.value);
+        }
       }
     }
   });

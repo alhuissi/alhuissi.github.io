@@ -15,13 +15,13 @@ export default defineConfig({
     outDir: 'island-runtime',
     emptyOutDir: true,
     target: 'es2022',
-    chunkSizeWarningLimit: 600, // The lazy Three.js chunk is about 146 kB gzipped.
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       input: 'src/main.ts',
       output: {
         entryFileNames: 'app.js',
         chunkFileNames: 'chunks/[name]-[hash].js',
-        manualChunks: (id) => id.includes('/node_modules/three/') ? 'three' : undefined,
+        manualChunks: (id) => /\/node_modules\/three\/(src|build)\//.test(id) ? 'three' : undefined,
       },
     },
   },

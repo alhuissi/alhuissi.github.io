@@ -1,6 +1,6 @@
 import {
-  BackSide, BufferGeometry, DoubleSide, Float32BufferAttribute, Mesh, PlaneGeometry,
-  Points, ShaderMaterial, SphereGeometry,
+  BackSide, BufferGeometry, DoubleSide, Float32BufferAttribute, Mesh, NearestFilter, PlaneGeometry,
+  Points, ShaderMaterial, SphereGeometry, SRGBColorSpace, TextureLoader,
 } from 'three';
 import type { Group } from 'three';
 import { heightAt, pool, poolLevel, randomFrom, rimPoint, seaLevel, shoreFraction, spill, spillAngle } from './land';
@@ -248,15 +248,41 @@ function waterfall(root: Group, clock: WorldClock) {
   root.add(new Mesh(geometry, material));
 }
 
-export function portalSurface(clock: WorldClock) {
+export function portalSurface(clock: WorldClock, invalidate: () => void) {
+  const reflectionReady = { value: 0 };
+  const heroes = new TextureLoader().load('./island-media/dream-ocean-reflections.webp', () => {
+    reflectionReady.value = 1;
+    invalidate();
+  });
+  heroes.colorSpace = SRGBColorSpace;
+  heroes.magFilter = NearestFilter;
+  heroes.minFilter = NearestFilter;
+  heroes.generateMipmaps = false;
   return new ShaderMaterial({
-    uniforms: { clock },
+    uniforms: { clock, heroes: { value: heroes }, reflectionReady },
     toneMapped: false,
-    vertexShader: skinVertex,
+    side: DoubleSide,
+    vertexShader: /* glsl */ `
+      varying vec2 coords;
+      varying vec3 mirrorView;
+      void main() {
+        coords = uv;
+        vec4 view = modelViewMatrix * vec4(position, 1.0);
+        mirrorView = -(view.xyz * normalMatrix);
+        gl_Position = projectionMatrix * view;
+      }
+    `,
     fragmentShader: /* glsl */ `
       uniform float clock;
+      uniform sampler2D heroes;
+      uniform float reflectionReady;
       varying vec2 coords;
+      varying vec3 mirrorView;
       ${noise}
+      vec4 reflectParty(vec2 p, float layer) {
+        p = clamp(p, vec2(.004), vec2(.996));
+        return texture2D(heroes, vec2((p.x + layer) * .5, p.y));
+      }
       void main() {
         vec2 p = coords * vec2(.30, .20) + vec2(.50, .0);
         float drift = layers(vec2(p.x * 2.6 - clock * .18, p.y * 4.7 + clock * .09));
@@ -267,7 +293,25 @@ export function portalSurface(clock: WorldClock) {
         float light = sat(.23 + drift * .49 + band * .38 + contour * .13 + rim * .2);
         vec3 color = mix(vec3(.10, .20, .33), vec3(.68, .80, .96), light);
         color += pow(band, 13.0) * vec3(.12, .13, .11);
-        gl_FragColor = vec4(color * color, 1.0);
+        vec3 surface = color * color;
+        if (reflectionReady > .5) {
+          float distanceToPane = max(length(mirrorView), .01);
+          float facing = smoothstep(.16, .68, abs(mirrorView.z) / distanceToPane);
+          float strength = mix(1.0, .38, smoothstep(13., 53., distanceToPane)) * facing;
+          vec2 viewSlide = clamp(mirrorView.xy / max(abs(mirrorView.z), 5.), vec2(-1.), vec2(1.));
+          vec2 ripple = vec2(sin(p.y * 47. + drift * 3. - clock * 1.3) * .0038,
+            sin(p.x * 34. + p.y * 12. + clock * .82) * .0021);
+          vec4 distant = reflectParty(p + ripple - viewSlide * .092, 0.0);
+          vec4 foreground = reflectParty(p + ripple - viewSlide * .042, 1.0);
+          float recess = smoothstep(.08, .23, p.y) * (1.0 - smoothstep(.73, .95, p.y));
+          surface = mix(surface, vec3(.030, .061, .118) + surface * .28, strength * recess * .73);
+          surface = mix(surface, distant.rgb * vec3(.67, .77, .91) + vec3(.021, .037, .060),
+            distant.a * strength * .69);
+          surface = mix(surface, foreground.rgb * vec3(.94, .96, 1.0) + vec3(.012, .023, .036),
+            foreground.a * strength * .89);
+          surface += vec3(.018, .032, .058) * contour * strength;
+        }
+        gl_FragColor = vec4(surface, 1.0);
         #include <colorspace_fragment>
       }
     `,
