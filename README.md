@@ -1,22 +1,25 @@
-# alhuissi.com
+# The World Between Worlds
 
-A personal home for Alfredo L’huissier. An independently authored, lightweight site built with semantic HTML, CSS and minimal JavaScript.
+A playable personal website for Alfredo L’Huissier. A small island over a twilight sea connects Dream Ocean, Pocket Orbit, HanziZap, and Alfredo’s workshop.
 
-## Preview locally
+## Run locally
 
-From the repository root: `python3 -m http.server 8000` then open http://localhost:8000.
+Use Node 20.19 or later.
 
-No dependencies or build step. All assets are stored in `assets/` except the GitHub portrait, which loads from GitHub's avatar CDN.
+```sh
+npm ci
+npm run dev
+```
 
-## Publishing
+Open the URL Vite prints. Choose **Explore the island**, then use **WASD** or the arrow keys to move, drag to look, **E** to inspect a nearby landmark, and **R** to return to arrival. On touch screens, use the thumbstick. The **Projects** menu and island signs open the same project entries.
 
-GitHub Pages → Settings → Pages → Source: **Deploy from a branch**, branch **main**, folder **/(root)**. The custom domain alhuissi.com should be configured **only after** the initial preview is accepted, DNS and email records have been audited, and thedeval.com redirects have been planned. Do not set DNS just to preview.
+## Build and serve
 
-Media sources: Dream Ocean imagery from `alhuissi/dream-ocean-website`; Pocket Orbit gameplay from `alhuissi/pocket-orbit`. Re-export or replace these assets as the games change.
+```sh
+npm run build
+python3 -m http.server 4174 --bind 127.0.0.1
+```
 
-## Notes before domain migration
+Vite writes the browser modules to `island-runtime/`. The root `index.html` references those modules and local media by relative URL, so GitHub Pages can serve the checkout directly. Commit the regenerated runtime when changing TypeScript. The dev server substitutes the source entry automatically and supports local updates without rebuilding.
 
-- Switch canonical, OG and sitemap URLs to https://alhuissi.com/ after the domain cutover.
-- Replace the temporary `mailto:alfredo@thedeval.com` link if a new mailbox is commissioned; never modify MX/SPF/DKIM/DMARC records for a website move.
-- Keep thedeval.com online until redirects and email continuity are configured.
-- Social and Steam publisher links should be checked after launch. No newsletter, analytics, or contact service is invented by this site.
+See [the Phase 1 implementation report and playtest checklist](docs/world-between-worlds.md).
