@@ -11,6 +11,7 @@ import { heightAt, randomFrom } from './land';
 import { portalSurface } from './atmosphere';
 import type { WorldClock } from './atmosphere';
 import type { Collisions } from './collision';
+import { buildWorkshop } from './workshop';
 
 const slate = standard('#374b54');
 const shadowWood = standard('#4c3435');
@@ -57,129 +58,6 @@ function window(parent: Object3D, x: number, y: number, z: number, width: number
   box(parent, timber, width * 1.26, .108, .24, x, y - .045, z + .056);
   box(parent, shadowWood, .06, height * .87, .044, x, y + height * .43, z + .047);
   box(parent, shadowWood, width * .93, .05, .044, x, y + height * .48, z + .047);
-}
-
-function tiledRoof(parent: Object3D, x: number, y: number, z: number, halfWidth: number,
-  rise: number, depth: number, tiles: Material[]) {
-  volume(parent, shadowWood, [[-halfWidth, 0], [0, rise], [halfWidth, 0]], depth - .32, x, y - .07, z);
-  const slant = Math.atan2(rise, halfWidth);
-  const run = Math.hypot(halfWidth, rise);
-  const rows = Math.ceil(run / .45);
-  const cols = Math.ceil(depth / .61);
-  for (const side of [-1, 1]) {
-    for (let row = 0; row < rows; row++) {
-      const t = (row + .42) / rows;
-      for (let col = 0; col < cols; col++) {
-        const wide = (col + .5 + (row % 2) * .12) / cols;
-        const tile = box(parent, tiles[(row * 13 + col * 5 + side + tiles.length) % tiles.length],
-          run / rows * 1.16, .115, depth / cols * 1.02,
-          x + side * t * halfWidth, y + rise * (1 - t), z + (wide - .5) * depth);
-        tile.rotation.z = -side * slant;
-      }
-    }
-    for (const dz of [-depth / 2, depth / 2]) {
-      beam(parent, shadowWood, new Vector3(x, y + rise + .035, z + dz),
-        new Vector3(x + halfWidth * side, y - .05, z + dz), .16, .19);
-    }
-  }
-  box(parent, tiles[0], .24, .15, depth + .12, x, y + rise + .08, z);
-}
-
-function frontMasonry(parent: Group, depth: number, length: number, minHeight: number, x: number, z: number) {
-  const random = randomFrom(1881);
-  const stones = [lime, sandstone, standard('#ad8f74')];
-  for (let i = 0; i < 37; i++) {
-    const row = Math.floor(i / 8);
-    const side = (i % 8 + (row % 2) * .43) / 8 - .5;
-    const px = x + side * length + (random() - .5) * .24;
-    const py = minHeight + row * .36 + random() * .13;
-    if (Math.abs(px + .4) < 1.03 && py > .26) continue;
-    box(parent, stones[i % 3], .29 + random() * .34, .10 + random() * .076, .075, px, py, z + depth / 2);
-  }
-}
-
-function workshop(root: Group, collisions: Collisions) {
-  const yaw = -.08;
-  const home = lodge(root, 'workshop', yaw);
-  const [x, y, z] = home.position;
-  const mortared = standard('#bea087');
-  const plaster = standard('#c7a782');
-  const blueWood = standard('#5b6f6d');
-  const mainTiles = [standard('#a55e50'), standard('#ac6652'), standard('#955153'), standard('#bf775c')];
-  const wingTiles = [slate, standard('#4e6269'), standard('#547475'), standard('#455760')];
-
-  box(home, shadowWood, 7.85, .47, 5.95, 0, .04, 0);
-  box(home, mortared, 5.38, 3.68, 4.75, -.65, 1.87, -.22);
-  box(home, plaster, 2.75, 2.53, 4.42, 2.75, 1.2, .21);
-  box(home, sandstone, .74, 4.04, .77, 1.19, 3.72, -.92);
-  box(home, timber, .94, .27, .98, 1.19, 5.77, -.92);
-  box(home, shadowWood, .78, .16, .81, 1.19, 5.98, -.92);
-  for (let i = 0; i < 5; i++) {
-    box(home, lime, .79, .078, .81, 1.19, 4.32 + i * .285, -.92);
-  }
-
-  tiledRoof(home, -.65, 3.71, -.21, 3.08, 2.66, 5.64, mainTiles);
-  tiledRoof(home, 2.75, 2.47, .21, 1.7, 1.75, 5.03, wingTiles);
-  for (const x of [-3.33, 2.04, 4.12]) {
-    box(home, timber, .17, x === 4.12 ? 2.59 : 3.6, .17, x, x === 4.12 ? 1.29 : 1.8, 2.19);
-  }
-  frontMasonry(home, 4.75, 5.1, .18, -.68, -.22);
-  for (const px of [-2.24, 1.04]) window(home, px, 1.54, 2.17, .85, 1.3);
-  for (const px of [2.46, 3.47]) window(home, px, 1.05, 2.45, .62, 1.04);
-  const rear = new Group();
-  rear.rotation.y = Math.PI;
-  home.add(rear);
-  for (const px of [-1.04, 2.24]) window(rear, px, 1.43, 2.604, .85, 1.2);
-
-  const round = column(home, timber, .55, .55, .102, -.65, 4.28, 2.427, 20);
-  round.rotation.x = Math.PI / 2;
-  const ember = column(home, softGlass, .401, .401, .106, -.65, 4.28, 2.487, 20);
-  ember.rotation.x = Math.PI / 2;
-  box(home, shadowWood, .075, .86, .08, -.65, 4.28, 2.55);
-  box(home, shadowWood, .86, .075, .08, -.65, 4.28, 2.55);
-
-  archPanel(home, shadowWood, -.65, .23, 2.19, .9, 2.36);
-  archPanel(home, blueWood, -.65, .25, 2.23, .68, 2.16);
-  archPanel(home, softGlass, -.65, 1.62, 2.245, .25, .49);
-  for (const offset of [-.45, -.24, .22, .43]) {
-    box(home, shadowWood, .022, 1.54, .026, -.65 + offset, 1.02, 2.247);
-  }
-  box(home, brass, .091, .11, .06, -.25, 1.02, 2.28);
-  box(home, lime, 2.37, .18, .91, -.65, .13, 2.66);
-  box(home, sandstone, 2.76, .14, .56, -.65, -.005, 3.23);
-
-  for (const px of [-2, .69]) {
-    box(home, timber, .15, 2.55, .16, px, 1.27, 3.3);
-    box(home, shadowWood, .29, .13, .29, px, .17, 3.3);
-    beam(home, timber, new Vector3(px, 1.86, 3.3), new Vector3(px, 2.37, 2.71), .13);
-    box(home, softGlass, .21, .3, .21, px, 2.06, 3.41);
-    box(home, darkMetal, .28, .072, .28, px, 2.26, 3.41);
-  }
-  tiledRoof(home, -.65, 2.59, 2.84, 1.54, .61, 1.58, wingTiles);
-
-  // The bench and the instrument sit between the front door and the launchpad trail.
-  box(home, timber, 2.15, .17, .82, 3.08, .89, 3.16);
-  for (const px of [2.26, 3.90]) box(home, shadowWood, .18, .87, .63, px, .43, 3.16);
-  box(home, blueWood, .61, .29, .38, 3.45, 1.12, 3.12);
-  box(home, brass, .16, .068, .08, 3.45, 1.29, 3.12);
-  const instrument = new Group();
-  instrument.position.set(1.96, .13, 3.67);
-  instrument.rotation.z = -.23;
-  instrument.rotation.x = -.12;
-  home.add(instrument);
-  volume(instrument, copper, [[-.24, .18], [-.34, .34], [-.22, .52], [-.23, .72], [0, .82],
-    [.24, .72], [.17, .55], [.32, .32], [.21, .17], [0, .13]], .11, 0, 0, 0, .028);
-  box(instrument, shadowWood, .11, .83, .11, 0, .89, .076);
-  box(instrument, brass, .17, .18, .096, 0, 1.36, .077);
-  const soundHole = column(instrument, shadowWood, .095, .095, .013, 0, .53, .09, 14);
-  soundHole.rotation.x = Math.PI / 2;
-  for (const px of [-.027, 0, .027]) box(instrument, lime, .01, .89, .012, px, .81, .143);
-  for (let i = 0; i < 3; i++) {
-    column(home, timber, .38, .28, .58 + i * .15, -3.5 - i * .37, .28, 1.6 - i * .14, 9);
-    column(home, brass, .39, .315, .07, -3.5 - i * .37, .16, 1.6 - i * .14, 9);
-  }
-
-  collisions.add(x - .38, z, 8.05, 5.45, y - .7, 7.1, yaw);
 }
 
 function dreamGateway(root: Group, clock: WorldClock, collisions: Collisions) {
@@ -505,11 +383,12 @@ function observatory(root: Group, collisions: Collisions) {
 }
 
 export function buildLandmarks(root: Group, collisions: Collisions, clock: WorldClock) {
-  workshop(root, collisions);
+  const updateWorkshop = buildWorkshop(root, collisions, clock);
   dreamGateway(root, clock, collisions);
   launchpad(root, collisions);
   arcade(root, collisions);
   observatory(root, collisions);
+  return updateWorkshop;
 }
 
 export function guideLights(root: Group) {

@@ -26,7 +26,7 @@ export const destinations: Record<DestinationId, Destination> = {
     signHeight: 5.13, hit: [5.8, 5.25, 4.4],
   },
   workshop: {
-    id: 'workshop', name: 'Workshop', landmark: [-.4, -.4], approach: [-.4, 4.5],
+    id: 'workshop', name: 'Workshop', landmark: [-.4, -.4], approach: [.88, 6.05],
     signHeight: 8.2, hit: [8.5, 7.9, 6.4],
   },
   observatory: {

@@ -9,10 +9,13 @@
   <meta property="og:type" content="website">
   <meta property="og:title" content="Alfredo L’Huissier · The World Between Worlds">
   <meta property="og:description" content="A playable island by the creator of Dream Ocean, Pocket Orbit &amp; HanziZap.">
-  <meta property="og:image" content="https://alhuissi.github.io/island-media/vista.webp">
+  <meta property="og:url" content="https://alhuissi.com/">
+  <meta property="og:image" content="https://alhuissi.com/island-media/vista.webp">
   <meta property="og:image:alt" content="An inhabited island suspended above a twilight sea beneath a ringed planet.">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="icon" type="image/svg+xml" href="./island-media/compass.svg">
+  <meta name="twitter:creator" content="@alhuissi">
+  <link rel="canonical" href="https://alhuissi.com/">
+  <link rel="icon" type="image/svg+xml" href="./island-media/alhuissi-mark.svg">
   <link rel="preload" href="./island-media/BodoniModa.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="./island.css">
   <script type="module" src="./island-runtime/app.js"></script>
@@ -36,8 +39,9 @@
     <symbol id="icon-spark" viewBox="0 0 24 24">
       <path d="m14 2-9 12h6l-1 8 9-12h-6l1-8Z"/>
     </symbol>
-    <symbol id="icon-house" viewBox="0 0 24 24">
-      <path d="M2.5 12 12 4l9.5 8M5.5 10v10h13V10M10 20v-6h4v6"/>
+    <symbol id="icon-workshop" viewBox="0 0 24 24">
+      <circle cx="12" cy="10" r="7"/>
+      <path d="m12 6 2.5 4-2.5 4-2.5-4 2.5-4ZM8 17l-2.5 4h13L16 17"/>
     </symbol>
     <symbol id="icon-scope" viewBox="0 0 24 24">
       <path d="m3 10 15-7 2.5 5L6 15l-3-5ZM11.5 13v8m0-5L7 21m4.5-5 4.5 5"/>
@@ -52,7 +56,7 @@
   <a class="skip-link" href="#projects">Skip to projects</a>
   <header class="masthead">
     <a class="wordmark" href="#world" aria-label="alhuissi, island overview" data-home>
-      <svg class="icon" aria-hidden="true"><use href="#icon-island"/></svg>
+      <img class="brand-mark" src="./island-media/alhuissi-mark.svg" width="20" height="28" alt="">
       <span>alhuissi<span class="wordmark-period">.</span></span>
     </a>
     <nav class="main-nav" aria-label="Main navigation">
@@ -96,7 +100,7 @@
           <svg class="icon" aria-hidden="true"><use href="#icon-spark"/></svg><span>HanziZap</span>
         </a>
         <a class="island-sign workshop" href="#workshop" data-place="workshop">
-          <svg class="icon" aria-hidden="true"><use href="#icon-house"/></svg><span>Workshop</span>
+          <svg class="icon" aria-hidden="true"><use href="#icon-workshop"/></svg><span>Workshop</span>
         </a>
         <a class="island-sign observatory" href="#observatory" data-place="observatory">
           <svg class="icon" aria-hidden="true"><use href="#icon-scope"/></svg><span>Observatory</span>
@@ -229,11 +233,16 @@
         <a class="entry-close" href="#world" aria-label="Close the workshop"><svg class="icon" aria-hidden="true"><use href="#icon-close"/></svg></a>
         <p class="entry-location">The Workshop</p>
         <h2 id="workshop-title">Alfredo L’Huissier</h2>
-        <p>I’m an independent developer and musician. I make games, write music, and build the tools I use to bring those worlds to life.</p>
-        <div class="entry-links">
-          <a class="primary-link" href="mailto:alfredo@alhuissi.com">Email Alfredo</a>
+        <p class="about-lead">I’m an independent game developer and musician from Chile. I make games, write music, and build the tools I use along the way.</p>
+        <figure class="entry-art">
+          <img src="./island-media/workshop.webp" width="1120" height="630" alt="The workshop at twilight, with the teal Alhuissi mark suspended in its rooftop gyroscope." loading="lazy" decoding="async">
+        </figure>
+        <p class="about-projects">I’m working on <a href="#dream-ocean">Dream Ocean</a>, a story-driven RPG about memory, and <a href="#pocket-orbit">Pocket Orbit</a>, where you fly a ship as a cat and grow a garden on a new planet. I also made <a href="#hanzizap">HanziZap</a> for learning Mandarin in quick arcade rounds.</p>
+        <nav class="entry-links" aria-label="Contact and updates">
+          <a class="primary-link" href="mailto:alfredo@alhuissi.com">Email me</a>
+          <a href="https://x.com/alhuissi">@alhuissi on X</a>
           <a href="https://github.com/alhuissi">GitHub</a>
-        </div>
+        </nav>
         <button class="walk-link" type="button" data-walk="workshop" hidden>Walk to the workshop</button>
       </article>
 

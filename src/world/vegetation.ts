@@ -3,7 +3,6 @@ import {
   Group, IcosahedronGeometry, InstancedMesh, MeshStandardMaterial, Object3D, Vector3,
 } from 'three';
 import type { Material } from 'three';
-import { destinations } from '../destinations';
 import { box, column, solid, standard } from './geometry';
 import { heightAt, pool, poolLevel, randomFrom, rimPoint, shoreFraction } from './land';
 import { paths } from './terrain';
@@ -236,12 +235,6 @@ function fence(root: Group) {
       }
       left = right;
     }
-  }
-  const [x, z] = destinations.workshop.approach;
-  const y = heightAt(x + 1.7, z + .25);
-  box(root, bark, 1.19, .11, .36, x + 1.7, y + .45, z + .25).rotation.y = -.25;
-  for (const px of [x + 1.25, x + 2.13]) {
-    box(root, barkLight, .12, .46, .26, px, y + .21, z + .25);
   }
 }
 

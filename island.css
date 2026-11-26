@@ -91,8 +91,8 @@ a { color: inherit; }
   letter-spacing: -.06em;
   text-decoration: none;
 }
-.wordmark .icon { width: 1.02em; height: 1.02em; color: var(--gold); }
-.wordmark-period { color: var(--gold); }
+.brand-mark { width: .83em; height: 1.06em; object-fit: contain; }
+.wordmark-period { color: #13cbb7; }
 
 .main-nav {
   display: flex;
@@ -542,6 +542,25 @@ kbd {
   margin-top: .45rem;
   font-size: .76rem;
   color: var(--muted);
+}
+.workshop h2 { margin-bottom: .85rem; }
+.entry.workshop > .about-lead {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1.09rem;
+  line-height: 1.55;
+}
+.workshop .entry-art { margin: 1.15rem 0; }
+.about-projects a {
+  color: var(--ink);
+  text-decoration-color: var(--line);
+  text-underline-offset: .23em;
+}
+.about-projects a:hover { text-decoration-color: var(--accent); }
+.workshop .entry-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
 }
 .app-capture-grid {
   display: grid;

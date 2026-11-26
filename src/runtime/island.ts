@@ -79,7 +79,7 @@ export function createIsland(ui: Interface) {
   scene.add(traveler.root);
   buildAtmosphere(world, clock, quality.light);
   buildTerrain(world);
-  buildLandmarks(world, collisions, clock);
+  const updateLandmarks = buildLandmarks(world, collisions, clock);
   guideLights(world);
   buildVegetation(world, collisions, clock, quality.light);
   bakeSolids(world);
@@ -274,6 +274,7 @@ export function createIsland(ui: Interface) {
       }
     }
     if (!reduced) clock.value += dt;
+    updateLandmarks();
     rig.update(dt, walker.position, mode === 'walk', clock.value, reduced, snap);
     traveler.update(walker.position, walker.heading, dt, rig.camera,
       input.walkHeld || Boolean(route), walker.falling, snap);

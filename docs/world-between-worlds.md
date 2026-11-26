@@ -4,7 +4,7 @@
 
 The island is the homepage. The opening composition places the ringed planet above a terraced island, with Alfredo’s introduction alongside it. Close to ground level, lamplight and trails lead past conifers, reeds and rock outcrops to the workshop. The four surrounding landmarks each have a silhouette visible from several angles.
 
-- **Workshop.** Two tiled roofs, arched windows, an outdoor workbench and a guitar connect engineering and music.
+- **Workshop.** An angular electronics and music lab anchors the central trail. Cyan edge lighting, exposed coolant tubes and a rotating roof gyroscope frame the warm control-room window. Alfredo’s teal mark forms the crystal suspended inside the gyroscope. About links to his projects, email, X and GitHub.
 - **Dream Ocean.** A weathered stone gateway, cool foliage and a waterfall connect the site to the game’s coastal imagery. The journal shows Andi lining up Tidal Collapse in Citryan.
 - **Pocket Orbit.** A compact original spacecraft sits on a marked launchpad with approach lights. The journal shows a shuttle approaching Arven from space and links to the browser demo and Steam.
 - **HanziZap.** The arcade uses a warm sign, ribbed roofs, lanterns and two cabinets. The journal shows Sprint and Daily Zap rounds side by side.
@@ -23,6 +23,7 @@ Andi from Dream Ocean is the playable character. He uses the game’s eight-dire
 | Destinations | `src/destinations.ts` holds landmark placements, interaction ranges via approach points, and named trail waypoints. Project copy and links live in HTML. |
 | Scene lifecycle | `src/runtime/island.ts` handles lighting, render scheduling, resize, world projection, ray picking, WebGL context changes, and pause and teardown. |
 | World | `src/world/` contains terrain and collision surfaces, custom landmarks, the traveler, vegetation, and the sky, sea, waterfall and gateway shaders. |
+| Workshop | `src/world/workshop.ts` builds the lab, its fixtures and its gyroscope. The ring uses the island clock for motion. The building, cooling bay and bench use separate collision volumes. |
 | Exploration | `src/runtime/input.ts`, `walking.ts` and `camera.ts` handle input, damped motion, collision sliding, route finding and camera follow. Assisted walks use terrain-aware grid search, then connect waypoints along clear segments. |
 | Performance and resources | `src/runtime/quality.ts` controls resolution and device budgets. `src/world/geometry.ts` batches static props. `src/runtime/resources.ts` deduplicates cleanup across shared resources. |
 
@@ -36,7 +37,8 @@ Reviewed the target repository and its earlier Three.js worlds, The Deval’s is
 | Dream Ocean media | The Dream Ocean site’s `assets/dream-ocean-wordmark.webp` and a November 26, 2026 gameplay capture from the `tactical-tidal-collapse` preset of the local game build at `c13fc0092`, using the approved Aquamarine battle HUD. |
 | Pocket Orbit media | The official `src/assets/brand/pocket-orbit-logo.webp` and gameplay capture `welcome/arven-orbit.webp` from the Pocket Orbit checkout. |
 | HanziZap media | The original dark wordmark paths from `Artwork/AppStore/Marketing/source/en-US-search-results.svg`, and raw inner-display Sprint and Daily Zap captures from `Artwork/AppStore/Duo/raw/inner/en-US/` in the HanziZap checkout. The stills are cropped to the app content. |
-| Desktop and portrait posters | WebP captures of the shipped island in Chrome with the interface hidden. |
+| Alhuissi mark | Traced from Alfredo’s supplied `logo-fondo-negro-1000.png` for the header, favicon, workshop sign and roof crystal. |
+| Workshop and island posters | WebP captures of the shipped island in Chrome with the interface hidden. The workshop’s geometry, sign and lighting are built in Three.js. |
 | Bodoni Moda | Existing local font. SIL Open Font License bundled as `island-media/OFL-BodoniModa.txt`. |
 | Three.js | MIT license bundled as `island-media/Three-LICENSE.txt`. |
 
@@ -47,6 +49,7 @@ Reviewed the target repository and its earlier Three.js worlds, The Deval’s is
 - Touch and lower-core devices use fewer grass and dust instances, a smaller shadow map, and a lower render-pixel budget. Sustained slow frames reduce render scale once per session.
 - The world pauses behind the journal and when the tab is hidden. Reduced motion freezes ambient time and removes camera transitions. A context loss restores the poster and project navigation while the device recovers.
 - Project travel stops at each outdoor approach. The journal links lead to the game or app itself.
+- The workshop batches most of its geometry into the existing static material groups. The gyroscope and glow surfaces render without additional scene lights or post-processing. The ring settles when reduced motion is active.
 
 ## Validation
 
@@ -65,6 +68,6 @@ Andi’s pass checked rendered atlas frames in Chrome for all eight facings, key
 - [ ] Walk off the seaward edge from arrival and confirm the traveler returns. Press **R** and use **Island view**.
 - [ ] On a phone, steer with the thumbstick and hold **Walk** with the other thumb. Drag to look, tap the arcade sign, and inspect its entry. Check the HUD in portrait and landscape.
 - [ ] Use the **Projects** and **About** links, Tab through a journal entry, close with Escape, and use browser Back. Load a direct URL with `#dream-ocean` appended.
-- [ ] Follow the Dream Ocean website and Steam links, the Pocket Orbit browser demo and Steam links, and the HanziZap App Store link. Confirm GitHub and the email link in About.
+- [ ] Follow the Dream Ocean website and Steam links, the Pocket Orbit browser demo and Steam links, and the HanziZap App Store link. Confirm X, GitHub, and the email link in About.
 - [ ] Repeat with reduced motion, then with WebGL unavailable. Disable JavaScript and browse via the static project directory.
 - [ ] Switch tabs and return. Check that movement keys clear and that the developer console stays clear of errors during navigation and resize.
