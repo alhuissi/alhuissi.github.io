@@ -1,6 +1,6 @@
 import {
-  DodecahedronGeometry, ExtrudeGeometry, Group, Mesh, Shape, ShapeGeometry,
-  SphereGeometry, TorusGeometry, Vector3,
+  AdditiveBlending, CanvasTexture, DodecahedronGeometry, ExtrudeGeometry, Group, Mesh, MeshBasicMaterial,
+  PlaneGeometry, PointLight, Shape, ShapeGeometry, SphereGeometry, Sprite, SpriteMaterial, TorusGeometry, Vector3,
 } from 'three';
 import type { Material, Object3D } from 'three';
 import { destinations } from '../destinations';
@@ -20,8 +20,8 @@ const lime = standard('#edd0a9');
 const darkMetal = standard('#3f444b', .59, .3);
 const copper = standard('#b27656', .49, .24);
 const brass = standard('#d9aa67', .5, .15);
-const warmGlass = lanternMaterial(0xe99a45, .67);
-const softGlass = lanternMaterial(0xffc478, .76);
+const warmGlass = lanternMaterial(0xe99a45, 1.35);
+const softGlass = lanternMaterial(0xffc478, 2.2);
 
 function lodge(root: Group, id: DestinationId, yaw: number) {
   const [x, z] = destinations[id].landmark;
@@ -317,9 +317,49 @@ export function buildLandmarks(root: Group, collisions: Collisions, clock: World
   return updateWorkshop;
 }
 
-export function guideLights(root: Group) {
-  const post = standard('#56514b');
-  const glass = lanternMaterial(0xffc672, .78);
+let glowTexture: CanvasTexture | null = null;
+
+// A soft radial sprite shared by every lamp halo and light pool on the ground.
+export function softGlow() {
+  if (glowTexture) return glowTexture;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 128;
+  const ctx = canvas.getContext('2d')!;
+  const gradient = ctx.createRadialGradient(64, 64, 0, 64, 64, 63);
+  gradient.addColorStop(0, 'rgba(255,255,255,1)');
+  gradient.addColorStop(.25, 'rgba(255,255,255,.42)');
+  gradient.addColorStop(.6, 'rgba(255,255,255,.1)');
+  gradient.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 128, 128);
+  glowTexture = new CanvasTexture(canvas);
+  return glowTexture;
+}
+
+function groundPool(root: Group, color: number, x: number, z: number, size: number, opacity: number) {
+  const pool = new Mesh(new PlaneGeometry(size, size), new MeshBasicMaterial({
+    map: softGlow(), color, opacity, transparent: true, blending: AdditiveBlending,
+    depthWrite: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -4,
+  }));
+  pool.rotation.x = -Math.PI / 2;
+  pool.position.set(x, heightAt(x, z) + .09, z);
+  pool.renderOrder = 2;
+  root.add(pool);
+}
+
+function halo(root: Group, color: number, x: number, y: number, z: number, size: number, opacity: number) {
+  const sprite = new Sprite(new SpriteMaterial({
+    map: softGlow(), color, opacity, transparent: true, blending: AdditiveBlending,
+    depthWrite: false, toneMapped: false,
+  }));
+  sprite.position.set(x, y, z);
+  sprite.scale.setScalar(size);
+  root.add(sprite);
+}
+
+export function guideLights(root: Group, rich: boolean) {
+  const post = standard('#3c3a44', .6, .35);
+  const glass = lanternMaterial(0xffc672, 2.4);
   const locations = [[2.9, 17.6], [.25, 14.7], [2.45, 10.7], [-1.4, 8.35], [-4.88, 5.6], [-8.52, 3.55],
     [-12.32, 2.31], [6.28, 5.4], [9.2, 2.73], [11.55, -.85], [7.3, 11.5], [10.1, 14.65], [-7.98, -.65],
     [-8.35, -5.9], [-6.55, -9.09]];
@@ -333,5 +373,25 @@ export function guideLights(root: Group) {
     column(root, post, .041, .15, .107, x, y + top + .102, z, 8);
     const heater = box(root, post, .19, .041, .19, x, y + top - .088, z);
     heater.rotation.y = Math.PI / 4;
+    halo(root, 0xffb25c, x, y + top, z, 1.05, .55);
+    groundPool(root, 0xffa04a, x, z, 3.4, .34);
   }
+
+  // A handful of real lights so the landmarks cast coloured light on the meadow at night.
+  const lamps: [number, number, number, number, number, number][] = [
+    [.4, 1.7, 3.6, 0x46e0ef, 14, 11],   // workshop door
+    [-2.3, 1.8, 3.1, 0xff9a52, 10, 9],  // workshop control room
+    [-15.2, 2.4, -1.4, 0x7fb8ff, 16, 12], // Dream Ocean gateway
+    [13.2, 2.6, 11.8, 0xffb45e, 14, 10], // HanziZap lanterns
+    [-3.6, 2.0, -11.4, 0xffc27a, 7, 8],  // observatory door
+    [12.4, 2.2, -4.2, 0x8fd8ff, 10, 10], // launchpad
+  ];
+  for (const [x, dy, z, color, intensity, distance] of rich ? lamps : lamps.slice(0, 3)) {
+    const light = new PointLight(color, intensity, distance, 1.6);
+    light.position.set(x, heightAt(x, z) + dy, z);
+    root.add(light);
+  }
+  groundPool(root, 0x7fb8ff, -15.2, -.6, 7.5, .26);
+  groundPool(root, 0xffb45e, 13.2, 12.6, 6.5, .22);
+  groundPool(root, 0x46e0ef, .5, 4.6, 5.5, .18);
 }

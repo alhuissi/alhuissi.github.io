@@ -1,18 +1,58 @@
 import {
-  BufferGeometry, Color, CylinderGeometry, DodecahedronGeometry, DoubleSide, Float32BufferAttribute,
+  BufferGeometry, Color, ConeGeometry, CylinderGeometry, DodecahedronGeometry, DoubleSide, Float32BufferAttribute,
   Group, IcosahedronGeometry, InstancedMesh, MeshStandardMaterial, Object3D, Vector3,
 } from 'three';
 import type { Material } from 'three';
-import { box, column, solid, standard } from './geometry';
+import { box, column, lanternMaterial, solid, standard } from './geometry';
 import { heightAt, pool, poolLevel, randomFrom, rimPoint, shoreFraction } from './land';
 import { paths } from './terrain';
 import type { Collisions } from './collision';
 import type { WorldClock } from './atmosphere';
 
-const bark = standard('#554740');
-const barkLight = standard('#74604b');
-const needles = ['#345d4f', '#496e55', '#5e7f61', '#4e715f', '#718667'].map((color) => standard(color));
-const blueNeedles = ['#375968', '#497280', '#598587', '#587584', '#769092'].map((color) => standard(color));
+const bark = standard('#4a3c3a');
+const barkLight = standard('#6a5548');
+
+// Foliage catches a soft moonlit rim (lilac on top, teal underneath) so crowns read against the
+// night sky instead of turning into flat silhouettes.
+function foliage(color: string, glow = 0) {
+  const material = new MeshStandardMaterial({ color, roughness: .78, flatShading: true });
+  if (glow) {
+    material.emissive = new Color(color);
+    material.emissiveIntensity = glow;
+  }
+  material.onBeforeCompile = (shader) => {
+    shader.fragmentShader = shader.fragmentShader.replace('#include <emissivemap_fragment>', `
+      #include <emissivemap_fragment>
+      float leafRim = pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 2.4);
+      vec3 leafRimColor = mix(vec3(.10, .32, .34), vec3(.34, .30, .62), clamp(normal.y * .5 + .5, 0.0, 1.0));
+      totalEmissiveRadiance += leafRimColor * leafRim * .42 * diffuseColor.rgb * 3.0;
+    `);
+  };
+  material.customProgramCacheKey = () => `foliage-rim-${glow}`;
+  return material;
+}
+
+const needles = ['#2f6a52', '#43805a', '#5a9064', '#3f7a63', '#6f9768'].map((color) => foliage(color));
+const blueNeedles = ['#2f5f74', '#3f7a8c', '#4f8e90', '#4a7894', '#6a9aa2'].map((color) => foliage(color));
+const firs = ['#1f4d48', '#285c50', '#2f6a5a', '#234f5a'].map((color) => foliage(color));
+const blossoms = ['#c66fae', '#9a6fd6', '#e38bb8', '#7d8de6'].map((color) => foliage(color, .32));
+const glowFruit = lanternMaterial(0xffd6f0, 2.2);
+
+// Organic crowns: a subdivided blob with every vertex nudged so no two clusters read as spheres.
+function lumpy(radius: number, detail: number, seed: number) {
+  const geometry = new IcosahedronGeometry(radius, detail);
+  const random = randomFrom(seed);
+  const position = geometry.attributes.position;
+  const cache = new Map<string, number>();
+  for (let i = 0; i < position.count; i++) {
+    const key = `${position.getX(i).toFixed(3)},${position.getY(i).toFixed(3)},${position.getZ(i).toFixed(3)}`;
+    if (!cache.has(key)) cache.set(key, .84 + random() * .3);
+    const k = cache.get(key)!;
+    position.setXYZ(i, position.getX(i) * k, position.getY(i) * k, position.getZ(i) * k);
+  }
+  geometry.computeVertexNormals();
+  return geometry;
+}
 
 function branch(parent: Group, from: Vector3, to: Vector3, startWidth: number, endWidth: number, mat: Material) {
   const aim = to.clone().sub(from);
@@ -60,18 +100,102 @@ function tree(root: Group, collisions: Collisions, x: number, z: number, size: n
     for (let layer = 0; layer < 3; layer++) {
       const center = elbow.clone().lerp(end, .22 + layer * .32);
       const r = (1 - age * .54) * (1 - layer * .18);
-      const mass = solid(tree, new IcosahedronGeometry(1, layer === 0 ? 1 : 0),
+      const mass = solid(tree, lumpy(1, 1, seed + i * 7 + layer),
         crown[(i + layer + 1) % crown.length], center.x, center.y + .1, center.z);
-      mass.scale.set((.84 + random() * .25) * r, (.26 + random() * .13) * r, (.79 + random() * .22) * r);
+      mass.scale.set((.86 + random() * .25) * r, (.32 + random() * .15) * r, (.81 + random() * .22) * r);
       mass.rotation.y = i * .94;
       mass.rotation.z = -.16 + random() * .35;
     }
   }
   for (let i = 0; i < 3; i++) {
-    const leaf = solid(tree, new IcosahedronGeometry(.56 - i * .09, 1), crown[2 + i], .62 + .139 * i, 3.07 + .20 * i, .14);
+    const leaf = solid(tree, lumpy(.56 - i * .09, 1, seed + 91 + i), crown[2 + i], .62 + .139 * i, 3.07 + .20 * i, .14);
     leaf.scale.set(1.22, .57, .92);
   }
   collisions.add(x, z, size * .43, size * .43, foot - .2, size * 1.8);
+}
+
+// A layered fir: a slim trunk and stacked, slightly drooping tiers of needles.
+function fir(root: Group, collisions: Collisions, x: number, z: number, size: number, seed: number) {
+  const random = randomFrom(seed);
+  const foot = heightAt(x, z);
+  const tree = new Group();
+  tree.position.set(x, foot - .1, z);
+  tree.rotation.y = random() * 6.28;
+  tree.scale.setScalar(size);
+  root.add(tree);
+  column(tree, bark, .07, .14, 1.3, 0, .62, 0, 6);
+  const tiers = 4 + Math.floor(random() * 2);
+  for (let i = 0; i < tiers; i++) {
+    const t = i / tiers;
+    const radius = (1 - t * .72) * (.95 + random() * .14);
+    const height = .95 - t * .25;
+    const cone = new ConeGeometry(radius, height, 7, 1);
+    const position = cone.attributes.position;
+    for (let v = 0; v < position.count; v++) {
+      if (position.getY(v) < 0) {
+        position.setY(v, position.getY(v) - .08 + random() * .05);
+        position.setX(v, position.getX(v) * (.9 + random() * .2));
+        position.setZ(v, position.getZ(v) * (.9 + random() * .2));
+      }
+    }
+    cone.computeVertexNormals();
+    const tier = solid(tree, cone, firs[(i + seed) % firs.length], (random() - .5) * .05, .9 + i * .52, (random() - .5) * .05);
+    tier.rotation.y = random() * 6.28;
+  }
+  collisions.add(x, z, size * .5, size * .5, foot - .2, size * 3);
+}
+
+// Small "spirit" trees whose blossom canopies glow softly, with hanging light buds.
+function blossom(root: Group, collisions: Collisions, x: number, z: number, size: number, seed: number) {
+  const random = randomFrom(seed);
+  const foot = heightAt(x, z);
+  const tree = new Group();
+  tree.position.set(x, foot - .1, z);
+  tree.rotation.y = random() * 6.28;
+  tree.scale.setScalar(size);
+  root.add(tree);
+  const bend = [new Vector3(0, 0, 0), new Vector3(.12, .8, .05), new Vector3(-.05, 1.55, .1), new Vector3(.15, 2.1, 0)];
+  const widths = [.17, .12, .08, .05];
+  for (let i = 1; i < bend.length; i++) branch(tree, bend[i - 1], bend[i], widths[i - 1], widths[i], barkLight);
+  const palette = blossoms[seed % blossoms.length];
+  const accent = blossoms[(seed + 1) % blossoms.length];
+  for (let i = 0; i < 7; i++) {
+    const a = i * 2.4 + random() * .5;
+    const reach = i === 0 ? 0 : .55 + random() * .45;
+    const cx = bend[3].x + Math.cos(a) * reach;
+    const cz = bend[3].z + Math.sin(a) * reach;
+    const cy = bend[3].y + .1 + (i === 0 ? .35 : random() * .3 - .1);
+    if (i) branch(tree, bend[2], new Vector3(cx, cy - .1, cz), .05, .02, barkLight);
+    const cloud = solid(tree, lumpy(.5 + random() * .2, 1, seed + i), i % 3 ? palette : accent, cx, cy, cz);
+    cloud.scale.y = .7;
+    if (i && random() > .35) {
+      const bud = solid(tree, new IcosahedronGeometry(.055, 0), glowFruit, cx * 1.08, cy - .42, cz * 1.08);
+      bud.castShadow = false;
+    }
+  }
+  collisions.add(x, z, size * .4, size * .4, foot - .2, size * 2.5);
+}
+
+const blossomTrees = [
+  [-12.9, 9.6, .95], [-19.4, 10.9, .85], [-11.4, -4.6, .8], [-19.6, 1.1, .78], [6.9, 15.1, .82], [17.7, 4.2, .74],
+] as const;
+
+// Fill the outer ring with firs wherever the meadow is clear of paths, buildings and the pond.
+function forest(root: Group, collisions: Collisions, low: boolean) {
+  const random = randomFrom(48151);
+  let planted = 0;
+  const goal = low ? 22 : 38;
+  for (let attempt = 0; attempt < 900 && planted < goal; attempt++) {
+    const angle = random() * Math.PI * 2;
+    const ring = .74 + random() * .17;
+    const [x, z] = rimPoint(angle, ring);
+    const y = heightAt(x, z);
+    // Keep the front of the island (towards the overview camera) open so the paths stay readable.
+    if (z > 12.5 && Math.abs(x - 2) < 9) continue;
+    if (y < poolLevel + .25 || onTrail(x, z, 1.7) || collisions.solid(x, z, 1.1, y - .5, y + 3)) continue;
+    fir(root, collisions, x, z, .8 + random() * .65, 3001 + attempt);
+    planted++;
+  }
 }
 
 const trees = [
@@ -165,7 +289,9 @@ function grass(root: Group, collisions: Collisions, clock: WorldClock, low: bool
 function scatter(root: Group, collisions: Collisions, low: boolean) {
   const colors = ['#6f7073', '#827263', '#697b77', '#9d8a76', '#51636a'].map((color) => standard(color));
   const shrubs = ['#49694f', '#5d805f', '#798b61'].map((color) => standard(color));
-  const flowers = [standard('#b7a9c4'), standard('#dfa96c'), standard('#a66c80'), standard('#dccb8f')];
+  // Night-blooming flowers glow faintly: periwinkle, amber, rose and pale gold.
+  const flowers = [lanternMaterial(0x9fb4ff, .9), lanternMaterial(0xffb36b, .8),
+    lanternMaterial(0xff7fbf, .9), lanternMaterial(0xfff0a0, .7)];
   const random = randomFrom(5256);
   for (let i = 0; i < (low ? 290 : 505); i++) {
     const x = (random() - .5) * 56;
@@ -240,6 +366,13 @@ function fence(root: Group) {
 
 export function buildVegetation(root: Group, collisions: Collisions, clock: WorldClock, low: boolean) {
   trees.forEach(([x, z, scale, yaw, blue], i) => tree(root, collisions, x, z, scale, yaw, 772 + i * 331, Boolean(blue)));
+  blossomTrees.forEach(([x, z, scale], i) => {
+    const y = heightAt(x, z);
+    if (y > poolLevel + .2 && !onTrail(x, z, 1.2) && !collisions.solid(x, z, .9, y - .5, y + 2)) {
+      blossom(root, collisions, x, z, scale, 61 + i * 17);
+    }
+  });
+  forest(root, collisions, low);
   scatter(root, collisions, low);
   grass(root, collisions, clock, low);
   fence(root);

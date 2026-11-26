@@ -15,7 +15,7 @@ export default defineConfig({
     outDir: 'island-runtime',
     emptyOutDir: true,
     target: 'es2022',
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 650,
     rollupOptions: {
       input: 'src/main.ts',
       output: {

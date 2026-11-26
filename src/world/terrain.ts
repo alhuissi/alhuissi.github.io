@@ -6,8 +6,8 @@ import { colorAttribute } from './geometry';
 import { heightAt, randomFrom, rimPoint, shoreFraction } from './land';
 
 const TAU = Math.PI * 2;
-const meadow = new Color('#3c6a59');
-const sunlit = new Color('#828e58');
+const meadow = new Color('#2e7255');
+const sunlit = new Color('#7d9e58');
 const heather = new Color('#41747a');
 const bronze = new Color('#8d8052');
 const bank = new Color('#74654f');

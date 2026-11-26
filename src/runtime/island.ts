@@ -1,7 +1,12 @@
 import {
-  ACESFilmicToneMapping, Box3, DirectionalLight, Fog, Group, HemisphereLight,
-  PCFShadowMap, Raycaster, Scene, Vector2, Vector3, WebGLRenderer,
+  ACESFilmicToneMapping, Box3, DirectionalLight, FogExp2, Group, HalfFloatType, HemisphereLight, Material, Mesh,
+  NoToneMapping, PCFShadowMap, Points, Raycaster, Scene, ShaderChunk, Sprite, Vector2, Vector3, WebGLRenderer,
+  WebGLRenderTarget,
 } from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { destinations } from '../destinations';
 import type { DestinationId } from '../destinations';
 import { buildAtmosphere } from '../world/atmosphere';
@@ -20,6 +25,47 @@ import { disposeScene } from './resources';
 import { Walker, walkSpeed } from './walking';
 
 export type Mode = 'overview' | 'walk';
+
+const exposure = 1.22;
+
+// With bloom the scene renders into a linear target, where three.js skips per-material tone
+// mapping. To keep the emblem, portal, signs and shuttle exactly as authored (toneMapped: false)
+// while everything else stays filmic, tone-mapped materials apply ACES themselves before bloom.
+function toneMapInMaterials(scene: Scene) {
+  if (!ShaderChunk.common.includes('NIGHT_ACES')) {
+    ShaderChunk.common += /* glsl */ `
+      #ifdef NIGHT_ACES
+      vec3 nightAces(vec3 color) {
+        const mat3 inputMat = mat3(vec3(0.59719, 0.07600, 0.02840), vec3(0.35458, 0.90834, 0.13383),
+          vec3(0.04823, 0.01566, 0.83777));
+        const mat3 outputMat = mat3(vec3(1.60475, -0.10208, -0.00327), vec3(-0.53108, 1.10813, -0.07276),
+          vec3(-0.07367, -0.00605, 1.07602));
+        color = inputMat * (color * NIGHT_ACES / 0.6);
+        vec3 a = color * (color + 0.0245786) - 0.000090537;
+        vec3 b = color * (0.983729 * color + 0.4329510) + 0.238081;
+        return clamp(outputMat * (a / b), 0.0, 1.0);
+      }
+      #endif
+    `;
+    ShaderChunk.tonemapping_fragment = /* glsl */ `
+      #if defined( TONE_MAPPING )
+        gl_FragColor.rgb = toneMapping( gl_FragColor.rgb );
+      #elif defined( NIGHT_ACES )
+        gl_FragColor.rgb = nightAces( gl_FragColor.rgb );
+      #endif
+    `;
+  }
+  const seen = new Set<Material>();
+  scene.traverse((object) => {
+    if (!(object instanceof Mesh || object instanceof Points || object instanceof Sprite)) return;
+    for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+      if (seen.has(material) || !material.toneMapped || material.defines?.NIGHT_ACES) continue;
+      seen.add(material);
+      material.defines = { ...material.defines, NIGHT_ACES: exposure.toFixed(3) };
+      material.needsUpdate = true;
+    }
+  });
+}
 type ScreenPoint = { x: number; y: number };
 
 type Interface = {
@@ -48,18 +94,19 @@ export function createIsland(ui: Interface) {
   if (!context) return null;
   const renderer = new WebGLRenderer({ canvas: ui.canvas, context, ...attributes });
   renderer.toneMapping = ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.06;
+  renderer.toneMappingExposure = exposure;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = PCFShadowMap;
   renderer.shadowMap.autoUpdate = false;
   renderer.shadowMap.needsUpdate = true;
 
   const scene = new Scene();
-  scene.fog = new Fog('#8392aa', 61, 268);
+  // Night: a cool moon key, violet sky fill and two coloured rims echo the nebula overhead.
+  scene.fog = new FogExp2('#0b0e28', .0046);
   const world = new Group();
   scene.add(world);
-  scene.add(new HemisphereLight('#cadbff', '#9b7169', 1.48));
-  const sun = new DirectionalLight('#ffd2a7', 2.38);
+  scene.add(new HemisphereLight('#94a6ff', '#43305a', 1.55));
+  const sun = new DirectionalLight('#c7d4ff', 2.05);
   sun.position.set(-24, 33, 24);
   sun.castShadow = true;
   sun.shadow.mapSize.setScalar(quality.light ? 1024 : 2048);
@@ -70,9 +117,12 @@ export function createIsland(ui: Interface) {
   sun.shadow.radius = 3;
   sun.shadow.intensity = .79;
   scene.add(sun);
-  const edgeLight = new DirectionalLight('#a0c0ff', .93);
+  const edgeLight = new DirectionalLight('#d58cff', 1.35);
   edgeLight.position.set(12, 14, -35);
   scene.add(edgeLight);
+  const tealRim = new DirectionalLight('#5ce6d6', .55);
+  tealRim.position.set(-34, 8, -12);
+  scene.add(tealRim);
 
   const collisions = new Collisions();
   const clock = { value: 0 };
@@ -80,17 +130,30 @@ export function createIsland(ui: Interface) {
   scene.add(traveler.root);
   buildAtmosphere(world, clock, quality.light);
   buildTerrain(world);
+  let filmicInMaterials = false;
   const updateLandmarks = buildLandmarks(world, collisions, clock, () => {
+    if (filmicInMaterials) toneMapInMaterials(scene);
     renderer.shadowMap.needsUpdate = true;
     invalidate();
   });
   const projectSigns = buildProjectSigns(world, collisions, invalidate);
-  guideLights(world);
+  guideLights(world, !quality.light);
   buildVegetation(world, collisions, clock, quality.light);
   bakeSolids(world);
 
   const walker = new Walker(collisions);
   const rig = new IslandCamera(collisions);
+  // Bloom lets lanterns, signage and the brightest stars glow; lighter devices render directly.
+  let composer: EffectComposer | null = null;
+  if (!quality.light) {
+    composer = new EffectComposer(renderer, new WebGLRenderTarget(1, 1, { type: HalfFloatType, samples: 4 }));
+    composer.addPass(new RenderPass(scene, rig.camera));
+    composer.addPass(new UnrealBloomPass(new Vector2(1, 1), .6, .4, .94));
+    composer.addPass(new OutputPass());
+    renderer.toneMapping = NoToneMapping;
+    toneMapInMaterials(scene);
+    filmicInMaterials = true;
+  }
   const bounds = Object.values(destinations).map((place) => {
     const [x, z] = place.landmark;
     const y = heightAt(x, z);
@@ -208,6 +271,10 @@ export function createIsland(ui: Interface) {
     height = Math.max(1, rect.height);
     renderer.setPixelRatio(quality.pixels(width, height));
     renderer.setSize(width, height, false);
+    if (composer) {
+      composer.setPixelRatio(renderer.getPixelRatio());
+      composer.setSize(width, height);
+    }
     rig.resize(width, height);
     snap = true;
     invalidate();
@@ -285,7 +352,8 @@ export function createIsland(ui: Interface) {
     traveler.update(walker.position, walker.heading, dt, rig.camera,
       input.walkHeld || Boolean(route), walker.falling, snap);
     snap = false;
-    renderer.render(scene, rig.camera);
+    if (composer) composer.render(dt);
+    else renderer.render(scene, rig.camera);
     if (firstFrame && traveler.ready) {
       firstFrame = false;
       ui.ready(true);
@@ -359,6 +427,7 @@ export function createIsland(ui: Interface) {
       observer.disconnect();
       input.dispose();
       sun.shadow.dispose();
+      composer?.dispose();
       disposeScene(scene);
       renderer.dispose();
     },

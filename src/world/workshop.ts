@@ -1,6 +1,6 @@
 import {
   AdditiveBlending, CanvasTexture, DoubleSide, ExtrudeGeometry, Group, Mesh,
-  MeshBasicMaterial, PlaneGeometry, Shape, SRGBColorSpace, TorusGeometry, Vector3,
+  MeshBasicMaterial, PlaneGeometry, Shape, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector3,
 } from 'three';
 import { destinations } from '../destinations';
 import type { WorldClock } from './atmosphere';
@@ -14,7 +14,7 @@ const enamel = standard('#557c88', .54, .15);
 const recess = standard('#131c2b', .79);
 const alloy = standard('#b47b57', .54, .26);
 const cyan = new MeshBasicMaterial({ color: '#6aefeb', toneMapped: false });
-const amber = lanternMaterial(0xffad61, 1.1);
+const amber = lanternMaterial(0xffad61, 2.2);
 const rose = new MeshBasicMaterial({ color: '#f589bc', toneMapped: false });
 const logoTeal = '#13cbb7';
 // Convert the artwork in alhuissi-mark.svg to a centered, upright Three.js shape.
@@ -71,10 +71,10 @@ function spillLight(home: Group) {
     new PlaneGeometry(w, h), new MeshBasicMaterial({ map: texture, color, opacity, transparent: true,
       blending: AdditiveBlending, depthWrite: false, toneMapped: false }),
   );
-  const door = pool(0x47d9e6, 3.1, 1.4, .31);
+  const door = pool(0x47d9e6, 3.6, 1.8, .55);
   door.rotation.x = -Math.PI / 2;
   door.position.set(.53, .217, 2.83);
-  const window = pool(0xf9974d, 3.7, 1.25, .26);
+  const window = pool(0xf9974d, 4.2, 1.6, .5);
   window.rotation.x = -Math.PI / 2;
   window.position.set(-2.04, .205, 2.72);
   home.add(door, window);
@@ -134,7 +134,7 @@ function gyroscope(home: Group, clock: WorldClock) {
 
 function controlRoom(home: Group) {
   const screen = new MeshBasicMaterial({ color: '#ffca92', toneMapped: false });
-  const warmWall = lanternMaterial(0xa06142, .38);
+  const warmWall = lanternMaterial(0xa06142, .9);
   box(home, warmWall, 3.41, 1.79, .095, -2.16, 1.66, 1.16);
   box(home, recess, 3.40, .13, .94, -2.16, 2.62, 1.70);
   box(home, alloy, 3.4, .13, .9, -2.16, .84, 1.67);
@@ -187,6 +187,47 @@ function coolantBank(home: Group) {
   }
   box(home, alloy, .081, 1.08, .16, 3.68, 1.49, 2.56);
   for (let i = 0; i < 5; i++) box(home, steel, .13, .041, .16, 3.64, .96 + i * .21, 2.62);
+}
+
+// Night dressing for the lab: lit side windows, light strips tracing the roofline, skylights,
+// a small relay dish and glowing guide lines along the sill. The emblem rotor is untouched.
+function nightDetails(home: Group) {
+  const glow = new MeshBasicMaterial({ color: '#7ff6f0', toneMapped: false });
+  const warm = new MeshBasicMaterial({ color: '#ffc58a', toneMapped: false });
+  const violet = new MeshBasicMaterial({ color: '#b48cff', toneMapped: false });
+  const skylight = lanternMaterial(0x63d6e6, .9);
+
+  // Side windows between the heat-sink fins, glowing warm from the workspace inside.
+  for (const side of [-1, 1]) {
+    box(home, recess, .06, .82, 1.5, side * 4.02, 1.5, 1.45);
+    box(home, warm, .03, .66, 1.32, side * 4.055, 1.5, 1.45);
+    for (const dz of [-.33, .33]) box(home, steel, .05, .7, .05, side * 4.07, 1.5, 1.45 + dz);
+    box(home, steel, .05, .05, 1.36, side * 4.07, 1.5, 1.45);
+  }
+
+  // Roofline light strips on the front, sides and the raised step of the roof.
+  box(home, violet, 8.05, .035, .04, .035, 3.09, 2.79);
+  box(home, glow, 4.30, .03, .04, -1.31, 3.67, 2.79);
+  for (const side of [-1, 1]) box(home, violet, .04, .035, 5.2, side * 4.13, 3.09, -.05);
+
+  // Skylights set into the roof, between the rotor and the antenna bank.
+  for (let i = 0; i < 3; i++) {
+    box(home, graphite, .82, .08, .62, -1.25 + i * .02, 3.69, 1.55 - i * .78);
+    box(home, skylight, .70, .04, .50, -1.25 + i * .02, 3.74, 1.55 - i * .78);
+  }
+
+  // A small relay dish aimed at the sky beside the antennas.
+  const dish = new Group();
+  dish.position.set(-.35, 3.74, -1.75);
+  home.add(dish);
+  column(dish, steel, .05, .08, .55, 0, .27, 0, 8);
+  const bowl = solid(dish, new SphereGeometry(.42, 14, 6, 0, Math.PI * 2, 0, Math.PI / 2.6), alloy, 0, .72, 0);
+  bowl.rotation.set(Math.PI + .7, 0, .35);
+  column(dish, glow, .03, .03, .07, -.14, .95, .2, 6);
+
+  // Glowing guide lines along the sill and a lit threshold for the door.
+  box(home, glow, 7.7, .025, .03, .09, .14, 2.53);
+  for (const side of [-1, 1]) box(home, glow, .03, .025, 4.9, side * 3.98, .14, .02);
 }
 
 export function buildWorkshop(root: Group, collisions: Collisions, clock: WorldClock) {
@@ -263,6 +304,7 @@ export function buildWorkshop(root: Group, collisions: Collisions, clock: WorldC
   }
   for (const yy of [4.62, 4.88, 5.15]) box(home, steel, .82, .045, .05, antennaX + .03, yy, antennaZ);
 
+  nightDetails(home);
   spillLight(home);
   const bench = home.localToWorld(new Vector3(2.37, 0, 4.04));
   const benchY = heightAt(bench.x, bench.z);

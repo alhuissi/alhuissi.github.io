@@ -1,6 +1,6 @@
 # The World Between Worlds
 
-A playable personal website for Alfredo L’Huissier. A small island over a twilight sea connects Dream Ocean, Pocket Orbit, HanziZap, and Alfredo’s workshop.
+A playable personal website for Alfredo L’Huissier. A small island over a moonlit sea of clouds connects Dream Ocean, Pocket Orbit, HanziZap, and Alfredo’s workshop.
 
 ## Run locally
 
