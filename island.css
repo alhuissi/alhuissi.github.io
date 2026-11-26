@@ -176,7 +176,7 @@ a { color: inherit; }
 }
 .world-name > span { width: 1.35rem; height: 1px; background: currentColor; }
 .identity h1 {
-  font: 700 clamp(3.3rem, 5.7vw, 7rem)/.9 var(--display);
+  font: 700 clamp(3rem, 5vw, 6.2rem)/.92 var(--display);
   font-variation-settings: 'opsz' 96;
   letter-spacing: -.055em;
   margin: 0 0 1.5rem;
@@ -187,6 +187,7 @@ a { color: inherit; }
   color: transparent;
   filter: drop-shadow(0 2px 24px rgb(6 6 22 / .5));
 }
+.identity h1 .headline-dot { color: #13cbb7; -webkit-text-fill-color: #13cbb7; }
 .identity-role {
   margin: 0;
   max-width: 26ch;
