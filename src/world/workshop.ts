@@ -191,39 +191,36 @@ function coolantBank(home: Group) {
   for (let i = 0; i < 5; i++) box(home, steel, .13, .041, .16, 3.64, .96 + i * .21, 2.62);
 }
 
-// The signal tower beside the lab's west wall: an octagonal shaft with five bands of lit windows
-// and service ribs, a skybridge to the roof, and a railed crown platform that carries the
-// alhuissi emblem rotor at the top. Returns the rotor mount.
-function signalTower(home: Group, collisions: Collisions) {
+// The signal tower rising from the lab roof where the rotor used to stand: a plinth on the roof,
+// an octagonal shaft with bands of lit windows and service ribs, and a railed crown platform
+// that carries the alhuissi emblem rotor at the top. Returns the rotor mount.
+function signalTower(home: Group) {
+  const roof = 3.31;
   const tower = new Group();
-  const local = new Vector3(-5.15, 0, -.05);
-  const world = home.localToWorld(local.clone());
-  const ground = heightAt(world.x, world.z) - home.position.y;
-  tower.position.set(local.x, Math.min(0, ground), local.z);
+  tower.position.set(1.85, roof, -.7);
   home.add(tower);
   const windowGlow = lanternMaterial(0xffb877, 1.6);
-  const shaftTop = 8.1;
-  const shaftHeight = shaftTop - .66;
-  const middle = .66 + shaftHeight / 2;
+  const shaftTop = 8.1 - roof;
+  const base = .42;
+  const shaftHeight = shaftTop - base;
+  const middle = base + shaftHeight / 2;
 
-  // Footing and tapered shaft.
-  column(tower, recess, 1.25, 1.38, .5, 0, .05, 0, 8);
-  column(tower, graphite, 1.06, 1.18, .4, 0, .48, 0, 8);
-  column(tower, graphite, .7, .9, shaftHeight, 0, middle, 0, 8);
-  column(tower, enamel, .94, .94, .1, 0, .7, 0, 8);
-  // A lit doorway at the base, facing the trail.
-  volume(tower, steel, [[-.3, 0], [.3, 0], [.3, .9], [0, 1.12], [-.3, .9]], .12, 0, .72, .9, .02);
-  volume(tower, windowGlow, [[-.22, 0], [.22, 0], [.22, .82], [0, .99], [-.22, .82]], .04, 0, .74, .97);
+  // Roof plinth: a stepped base bolted to the roof, with a cyan trim ring.
+  column(tower, graphite, 1.18, 1.3, .24, 0, .12, 0, 8);
+  column(tower, steel, .98, 1.08, .2, 0, .33, 0, 8);
+  column(tower, cyan, 1.1, 1.1, .025, 0, .245, 0, 24);
+  // Tapered shaft.
+  column(tower, graphite, .66, .84, shaftHeight, 0, middle, 0, 8);
   // Bands of lit windows, framed by alloy rings.
-  const radiusAt = (y: number) => .9 - (y - .66) / shaftHeight * .2;
-  for (const y of [1.95, 3.25, 4.55, 5.85, 7.15]) {
+  const radiusAt = (y: number) => .84 - (y - base) / shaftHeight * .18;
+  for (const y of [1.05, 2.15, 3.25, 4.25]) {
     const radius = radiusAt(y);
-    column(tower, windowGlow, radius + .012, radius + .016, .34, 0, y, 0, 8);
-    column(tower, alloy, radius + .05, radius + .05, .05, 0, y + .2, 0, 8);
-    column(tower, alloy, radius + .05, radius + .05, .05, 0, y - .2, 0, 8);
+    column(tower, windowGlow, radius + .012, radius + .016, .32, 0, y, 0, 8);
+    column(tower, alloy, radius + .05, radius + .05, .05, 0, y + .19, 0, 8);
+    column(tower, alloy, radius + .05, radius + .05, .05, 0, y - .19, 0, 8);
   }
   // Service ribs on every corner and two cyan seams facing the trail.
-  const lean = Math.atan(.2 / shaftHeight);
+  const lean = Math.atan(.18 / shaftHeight);
   for (let i = 0; i < 8; i++) {
     const a = (i + .5) * Math.PI / 4;
     const radius = radiusAt(middle) - .02;
@@ -234,22 +231,14 @@ function signalTower(home: Group, collisions: Collisions) {
   }
   for (const a of [-.39, .39]) {
     const radius = radiusAt(middle) - .03;
-    const seam = box(tower, cyan, .03, shaftHeight - .5, .03, Math.sin(a) * radius, middle, Math.cos(a) * radius);
+    const seam = box(tower, cyan, .03, shaftHeight - .4, .03, Math.sin(a) * radius, middle, Math.cos(a) * radius);
     seam.rotation.y = a;
     seam.rotation.x = -lean * Math.cos(a);
     seam.rotation.z = lean * Math.sin(a);
   }
 
-  // Skybridge from the tower into the lab's west wall, just under the roofline.
-  const bridgeLength = -4.0 - (local.x + .74) + .12;
-  const bx = .74 + bridgeLength / 2;
-  box(tower, graphite, bridgeLength, .62, .9, bx, 2.43 - tower.position.y, 0);
-  box(tower, windowGlow, bridgeLength - .1, .26, .92, bx, 2.46 - tower.position.y, 0);
-  box(tower, alloy, bridgeLength, .05, .96, bx, 2.76 - tower.position.y, 0);
-  box(tower, cyan, bridgeLength, .025, .03, bx, 2.14 - tower.position.y, .47);
-
   // Corbelled crown platform with a railing and a glowing rim.
-  column(tower, steel, 1.45, .72, .5, 0, shaftTop + .25, 0, 8);
+  column(tower, steel, 1.45, .68, .5, 0, shaftTop + .25, 0, 8);
   column(tower, alloy, 1.5, 1.5, .1, 0, shaftTop + .55, 0, 16);
   column(tower, cyan, 1.52, 1.52, .03, 0, shaftTop + .47, 0, 24);
   const rail = solid(tower, new TorusGeometry(1.46, .03, 5, 40), alloy, 0, shaftTop + .95, 0);
@@ -263,27 +252,7 @@ function signalTower(home: Group, collisions: Collisions) {
   const mount = new Group();
   mount.position.set(0, shaftTop + .6 - 3.31, 0);
   tower.add(mount);
-
-  collisions.add(world.x, world.z, 2.1, 2.1, heightAt(world.x, world.z) - .4, 13, home.rotation.y);
   return mount;
-}
-
-// Where the rotor used to sit: a small array of tilted solar panels around a glowing hatch.
-function rooftopArray(home: Group) {
-  const panelGlass = standard('#1f3b6b', .25, .55);
-  for (let row = 0; row < 2; row++) {
-    for (let col = 0; col < 3; col++) {
-      const x = 1.6 + col * .76;
-      const z = -1.55 + row * .95;
-      column(home, steel, .03, .03, .26, x, 3.44, z, 5);
-      const panel = box(home, panelGlass, .7, .04, .62, x, 3.6, z);
-      panel.rotation.x = -.42;
-      const frame = box(home, alloy, .72, .02, .025, x, 3.6 + Math.sin(.42) * .31, z - Math.cos(.42) * .31);
-      frame.rotation.x = -.42;
-    }
-  }
-  box(home, graphite, .7, .12, .7, 2.6, 3.37, .55);
-  box(home, lanternMaterial(0x63d6e6, 1.2), .5, .03, .5, 2.6, 3.44, .55);
 }
 
 // Night dressing for the lab: lit side windows, light strips tracing the roofline, skylights,
@@ -390,13 +359,12 @@ export function buildWorkshop(root: Group, collisions: Collisions, clock: WorldC
   }
   for (let i = 0; i < 4; i++) box(home, steel, 3.23, .12, .16, -1.1, 3.72, -2.06 + i * .42);
 
-  // A pair of short antennas on the roof; the emblem rotor now crowns the signal tower.
+  // A pair of short antennas on the roof; the emblem rotor crowns the signal tower.
   for (const [offset, height] of [[-.2, 1.2], [.22, .8]] as const) {
     column(home, steel, .03, .06, height, -2.97 + offset, 3.7 + height / 2, -1.29, 8);
     column(home, offset > 0 ? cyan : rose, .04, .05, .09, -2.97 + offset, 3.7 + height, -1.29, 8);
   }
-  const rotorMount = signalTower(home, collisions);
-  rooftopArray(home);
+  const rotorMount = signalTower(home);
 
   nightDetails(home);
   spillLight(home);

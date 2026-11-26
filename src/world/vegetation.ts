@@ -1,6 +1,6 @@
 import {
-  BufferGeometry, Color, ConeGeometry, CylinderGeometry, DodecahedronGeometry, DoubleSide, Float32BufferAttribute,
-  Group, IcosahedronGeometry, InstancedMesh, MeshStandardMaterial, Object3D, Vector3,
+  CanvasTexture, Color, ConeGeometry, CylinderGeometry, DodecahedronGeometry, DoubleSide,
+  Group, IcosahedronGeometry, MeshStandardMaterial, PlaneGeometry, SRGBColorSpace, Vector3,
 } from 'three';
 import type { Material } from 'three';
 import { box, column, lanternMaterial, solid, standard } from './geometry';
@@ -8,34 +8,101 @@ import { heightAt, pool, poolLevel, randomFrom, rimPoint, shoreFraction } from '
 import { paths } from './terrain';
 import type { Collisions } from './collision';
 import type { WorldClock } from './atmosphere';
+import { buildMeadow } from './meadow';
 
 const bark = standard('#4a3c3a');
 const barkLight = standard('#6a5548');
 
-// Foliage catches a soft moonlit rim (lilac on top, teal underneath) so crowns read against the
-// night sky instead of turning into flat silhouettes.
-function foliage(color: string, glow = 0) {
-  const material = new MeshStandardMaterial({ color, roughness: .78, flatShading: true });
+// Shared wind time for every crown (set to the world clock when the island is built).
+let leafClock: WorldClock = { value: 0 };
+let leafMask: CanvasTexture | null = null;
+
+// Pocket Orbit's leaf-clump mask: white pointed leaves on transparent, densest in the middle and
+// ragged at the edge, cut out of each leaf card so crowns end in foliage instead of facets.
+function leafTexture() {
+  if (leafMask) return leafMask;
+  const size = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  ctx.fillStyle = '#ffffff';
+  const random = randomFrom(1337);
+  const leaf = (x: number, y: number, length: number, width: number, angle: number) => {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.beginPath();
+    ctx.moveTo(0, -length / 2);
+    ctx.quadraticCurveTo(width, -length * .1, 0, length / 2);
+    ctx.quadraticCurveTo(-width, -length * .1, 0, -length / 2);
+    ctx.fill();
+    ctx.restore();
+  };
+  const c = size / 2;
+  for (let i = 0; i < 70; i++) {
+    const r = Math.sqrt(random()) * size * .36;
+    const a = random() * Math.PI * 2;
+    const x = c + Math.cos(a) * r;
+    const y = c + Math.sin(a) * r * .9;
+    leaf(x, y, 30 + random() * 26, 11 + random() * 6, a + Math.PI / 2 + (random() - .5) * .9);
+  }
+  ctx.beginPath();
+  ctx.arc(c, c, size * .2, 0, Math.PI * 2);
+  ctx.fill();
+  leafMask = new CanvasTexture(canvas);
+  leafMask.colorSpace = SRGBColorSpace;
+  return leafMask;
+}
+
+// Foliage as one soft rounded mass (normals point out of each clump, as in Pocket Orbit's crowns),
+// catching a moonlit rim (lilac on top, teal underneath) and swaying gently higher up.
+// `card`: the alpha-cut leaf cards wrapped around the clumps.
+function foliage(color: string, glow = 0, card = false) {
+  const material = new MeshStandardMaterial({ color, roughness: .8 });
   if (glow) {
     material.emissive = new Color(color);
     material.emissiveIntensity = glow;
   }
+  if (card) {
+    material.map = leafTexture();
+    material.alphaTest = .5;
+    material.side = DoubleSide;
+  }
   material.onBeforeCompile = (shader) => {
-    shader.fragmentShader = shader.fragmentShader.replace('#include <emissivemap_fragment>', `
+    shader.uniforms.uLeafTime = leafClock;
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nuniform float uLeafTime;')
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+      float leafLift = max(0.0, transformed.y - 1.2);
+      float leafWave = sin(uLeafTime * .9 + transformed.x * .35 + transformed.z * .22);
+      transformed.x += leafWave * .011 * leafLift;
+      transformed.z += cos(uLeafTime * .7 + transformed.z * .31) * .008 * leafLift;`);
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <normal_fragment_begin>', `#include <normal_fragment_begin>
+      ${card ? 'normal = normalize( vNormal );' : ''}`)
+      .replace('#include <emissivemap_fragment>', `
       #include <emissivemap_fragment>
-      float leafRim = pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 2.4);
+      float leafRim = pow(1.0 - clamp(abs(dot(normal, normalize(vViewPosition))), 0.0, 1.0), 2.4);
       vec3 leafRimColor = mix(vec3(.10, .32, .34), vec3(.34, .30, .62), clamp(normal.y * .5 + .5, 0.0, 1.0));
       totalEmissiveRadiance += leafRimColor * leafRim * .42 * diffuseColor.rgb * 3.0;
     `);
   };
-  material.customProgramCacheKey = () => `foliage-rim-${glow}`;
+  material.customProgramCacheKey = () => `foliage-${glow}-${card}`;
   return material;
 }
 
-const needles = ['#2f6a52', '#43805a', '#5a9064', '#3f7a63', '#6f9768'].map((color) => foliage(color));
-const blueNeedles = ['#2f5f74', '#3f7a8c', '#4f8e90', '#4a7894', '#6a9aa2'].map((color) => foliage(color));
+const needleColors = ['#2f6a52', '#43805a', '#5a9064', '#3f7a63', '#6f9768'];
+const blueColors = ['#2f5f74', '#3f7a8c', '#4f8e90', '#4a7894', '#6a9aa2'];
+const blossomColors = ['#c66fae', '#9a6fd6', '#e38bb8', '#7d8de6'];
+const needles = needleColors.map((color) => foliage(color));
+const blueNeedles = blueColors.map((color) => foliage(color));
+// Leaf cards a shade lighter than the body they wrap, so crown edges glint.
+const lighten = (color: string, amount: number) => `#${new Color(color).offsetHSL(0, -.02, amount).getHexString()}`;
+const needleCards = needleColors.map((color) => foliage(lighten(color, .09), 0, true));
+const blueCards = blueColors.map((color) => foliage(lighten(color, .09), 0, true));
 const firs = ['#1f4d48', '#285c50', '#2f6a5a', '#234f5a'].map((color) => foliage(color));
-const blossoms = ['#c66fae', '#9a6fd6', '#e38bb8', '#7d8de6'].map((color) => foliage(color, .32));
+const blossoms = blossomColors.map((color) => foliage(color, .32));
+const blossomCards = blossomColors.map((color) => foliage(lighten(color, .06), .38, true));
 const glowFruit = lanternMaterial(0xffd6f0, 2.2);
 
 // Organic crowns: a subdivided blob with every vertex nudged so no two clusters read as spheres.
@@ -43,14 +110,20 @@ function lumpy(radius: number, detail: number, seed: number) {
   const geometry = new IcosahedronGeometry(radius, detail);
   const random = randomFrom(seed);
   const position = geometry.attributes.position;
+  const normals = geometry.attributes.normal;
   const cache = new Map<string, number>();
   for (let i = 0; i < position.count; i++) {
     const key = `${position.getX(i).toFixed(3)},${position.getY(i).toFixed(3)},${position.getZ(i).toFixed(3)}`;
     if (!cache.has(key)) cache.set(key, .84 + random() * .3);
     const k = cache.get(key)!;
-    position.setXYZ(i, position.getX(i) * k, position.getY(i) * k, position.getZ(i) * k);
+    const x = position.getX(i);
+    const y = position.getY(i);
+    const z = position.getZ(i);
+    const length = Math.hypot(x, y, z) || 1;
+    // Normals point straight out of the clump, so it is lit as one soft rounded mass.
+    normals.setXYZ(i, x / length, y / length, z / length);
+    position.setXYZ(i, x * k, y * k, z * k);
   }
-  geometry.computeVertexNormals();
   return geometry;
 }
 
@@ -65,6 +138,7 @@ function branch(parent: Group, from: Vector3, to: Vector3, startWidth: number, e
 function tree(root: Group, collisions: Collisions, x: number, z: number, size: number, yaw: number, seed: number, blue = false) {
   const foot = heightAt(x, z);
   const crown = blue ? blueNeedles : needles;
+  const cards = blue ? blueCards : needleCards;
   const random = randomFrom(seed);
   const tree = new Group();
   tree.position.set(x, foot - .18, z);
@@ -102,16 +176,36 @@ function tree(root: Group, collisions: Collisions, x: number, z: number, size: n
       const r = (1 - age * .54) * (1 - layer * .18);
       const mass = solid(tree, lumpy(1, 1, seed + i * 7 + layer),
         crown[(i + layer + 1) % crown.length], center.x, center.y + .1, center.z);
-      mass.scale.set((.86 + random() * .25) * r, (.32 + random() * .15) * r, (.81 + random() * .22) * r);
+      mass.scale.set((.9 + random() * .25) * r, (.46 + random() * .16) * r, (.86 + random() * .22) * r);
       mass.rotation.y = i * .94;
       mass.rotation.z = -.16 + random() * .35;
+      leafCards(tree, cards[(i + layer + 1) % cards.length], mass.position, mass.scale.x, mass.scale.y, mass.scale.z,
+        layer === 0 ? 6 : 4, random);
     }
   }
   for (let i = 0; i < 3; i++) {
     const leaf = solid(tree, lumpy(.56 - i * .09, 1, seed + 91 + i), crown[2 + i], .62 + .139 * i, 3.07 + .20 * i, .14);
     leaf.scale.set(1.22, .57, .92);
+    leafCards(tree, cards[2 + i], leaf.position, .68 - i * .1, .32 - i * .05, .5 - i * .08, 4, random);
   }
   collisions.add(x, z, size * .43, size * .43, foot - .2, size * 1.8);
+}
+
+// Leaf cards scattered over a clump's surface (mostly its upper side), each facing out of it.
+const cardForward = new Vector3(0, 0, 1);
+const cardOut = new Vector3();
+function leafCards(parent: Group, material: Material, center: Vector3, sx: number, sy: number, sz: number,
+  count: number, random: () => number) {
+  for (let i = 0; i < count; i++) {
+    const a = random() * Math.PI * 2;
+    const lift = -.25 + random() * 1.15;
+    cardOut.set(Math.cos(a), lift, Math.sin(a)).normalize();
+    const size = (sx + sz) * (.62 + random() * .26);
+    const card = solid(parent, new PlaneGeometry(size, size * (.8 + random() * .3)), material,
+      center.x + cardOut.x * sx * .82, center.y + cardOut.y * sy * .9, center.z + cardOut.z * sz * .82);
+    card.quaternion.setFromUnitVectors(cardForward, cardOut);
+    card.rotateZ(random() * Math.PI * 2);
+  }
 }
 
 // A layered fir: a slim trunk and stacked, slightly drooping tiers of needles.
@@ -168,6 +262,7 @@ function blossom(root: Group, collisions: Collisions, x: number, z: number, size
     if (i) branch(tree, bend[2], new Vector3(cx, cy - .1, cz), .05, .02, barkLight);
     const cloud = solid(tree, lumpy(.5 + random() * .2, 1, seed + i), i % 3 ? palette : accent, cx, cy, cz);
     cloud.scale.y = .7;
+    leafCards(tree, blossomCards[(seed + (i % 3 ? 0 : 1)) % blossomCards.length], cloud.position, .6, .38, .6, 5, random);
     if (i && random() > .35) {
       const bud = solid(tree, new IcosahedronGeometry(.055, 0), glowFruit, cx * 1.08, cy - .42, cz * 1.08);
       bud.castShadow = false;
@@ -212,78 +307,6 @@ const trees = [
 function onTrail(x: number, z: number, margin: number) {
   const width = margin * margin;
   return paths.some((points) => points.some((point) => (point.x - x) ** 2 + (point.y - z) ** 2 < width));
-}
-
-function grass(root: Group, collisions: Collisions, clock: WorldClock, low: boolean) {
-  const random = randomFrom(9270);
-  const count = low ? 1200 : 2860;
-  const positions: number[] = [];
-  const colors: number[] = [];
-  const bladeCount = low ? 4 : 6;
-  for (let i = 0; i < bladeCount; i++) {
-    const angle = random() * Math.PI * 2;
-    const dx = Math.cos(angle);
-    const dz = Math.sin(angle);
-    const h = .18 + random() * .36;
-    const width = .022 + random() * .015;
-    const bx = (random() - .5) * .28;
-    const bz = (random() - .5) * .25;
-    const bend = h * (.16 + random() * .38);
-    const point = (s: number, v: number) => [
-      bx + dx * bend * v * v + dz * s * width * (1 - v),
-      h * v,
-      bz + dz * bend * v * v - dx * s * width * (1 - v),
-    ];
-    const lo = point(-1, 0);
-    const ro = point(1, 0);
-    const lm = point(-1, .47);
-    const rm = point(1, .47);
-    const tip = point(0, 1);
-    for (const p of [lo, ro, lm, ro, rm, lm, lm, rm, tip]) {
-      positions.push(...p);
-      const value = .44 + p[1] * 1.02;
-      colors.push(value * 1.06, value, value * .87);
-    }
-  }
-  const geometry = new BufferGeometry();
-  geometry.setAttribute('position', new Float32BufferAttribute(positions, 3));
-  geometry.setAttribute('color', new Float32BufferAttribute(colors, 3));
-  geometry.computeVertexNormals();
-  const material = new MeshStandardMaterial({ side: DoubleSide, vertexColors: true, roughness: 1 });
-  material.onBeforeCompile = (shader) => {
-    shader.uniforms.winds = clock;
-    shader.vertexShader = 'uniform float winds;\n' + shader.vertexShader.replace('#include <begin_vertex>', `
-      #include <begin_vertex>
-      float breeze = sin(winds * 1.55 + instanceMatrix[3].x * .37 + instanceMatrix[3].z * .52);
-      transformed.x += (breeze * .17 + .04) * position.y;
-      transformed.z += breeze * .085 * position.y;
-    `);
-  };
-  material.customProgramCacheKey = () => 'meadow-wind';
-  const stands = new InstancedMesh(geometry, material, count);
-  stands.receiveShadow = true;
-  const plant = new Object3D();
-  const tint = new Color();
-  let planted = 0;
-  for (let attempt = 0; planted < count && attempt < count * 5; attempt++) {
-    const x = (random() - .5) * 55;
-    const z = (random() - .5) * 42;
-    const y = heightAt(x, z);
-    if (shoreFraction(x, z) > .967 || y < poolLevel + .03 || onTrail(x, z, .9)
-      || collisions.solid(x, z, .2, y, y + .5)) continue;
-    const cover = .48 + .24 * Math.sin(x * .71 - z * .82) + .21 * Math.cos(z * .63 + x * .18);
-    if (random() > cover) continue;
-    plant.position.set(x, y - .018, z);
-    plant.rotation.y = random() * 6.28;
-    plant.scale.set(.71 + random() * .69, .52 + random() * 1.06, .71 + random() * .65);
-    plant.updateMatrix();
-    tint.setHSL(.146 + random() * .12, .12 + random() * .20, .33 + random() * .19);
-    stands.setMatrixAt(planted, plant.matrix);
-    stands.setColorAt(planted, tint);
-    planted++;
-  }
-  stands.count = planted;
-  root.add(stands);
 }
 
 function scatter(root: Group, collisions: Collisions, low: boolean) {
@@ -365,6 +388,7 @@ function fence(root: Group) {
 }
 
 export function buildVegetation(root: Group, collisions: Collisions, clock: WorldClock, low: boolean) {
+  leafClock = clock;
   trees.forEach(([x, z, scale, yaw, blue], i) => tree(root, collisions, x, z, scale, yaw, 772 + i * 331, Boolean(blue)));
   blossomTrees.forEach(([x, z, scale], i) => {
     const y = heightAt(x, z);
@@ -374,7 +398,7 @@ export function buildVegetation(root: Group, collisions: Collisions, clock: Worl
   });
   forest(root, collisions, low);
   scatter(root, collisions, low);
-  grass(root, collisions, clock, low);
+  buildMeadow(root, collisions, clock, low, onTrail);
   fence(root);
   const ridge = [-15.0, -1.02, 10.5];
   ridge.forEach((dx, i) => {
