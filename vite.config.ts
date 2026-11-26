@@ -8,7 +8,7 @@ export default defineConfig({
     apply: 'serve',
     transformIndexHtml: {
       order: 'pre',
-      handler: (html) => html.replace('./island-runtime/app.js', '/src/main.ts'),
+      handler: (html) => html.replace(/\.\/island-runtime\/app\.js(\?v=\w+)?/, '/src/main.ts'),
     },
   }],
   build: {
