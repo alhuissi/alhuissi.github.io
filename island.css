@@ -550,7 +550,12 @@ kbd {
   font-size: 1.09rem;
   line-height: 1.55;
 }
-.workshop .entry-art { margin: 1.15rem 0; }
+.about-portrait { margin: 1.15rem 0; }
+.about-portrait img {
+  aspect-ratio: 5 / 4;
+  object-fit: cover;
+  object-position: center 12%;
+}
 .about-projects a {
   color: var(--ink);
   text-decoration-color: var(--line);
