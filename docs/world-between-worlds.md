@@ -10,7 +10,7 @@ The island is the homepage. The opening composition places the ringed planet abo
 - **HanziZap.** The arcade uses a warm sign, ribbed roofs, lanterns and two cabinets. The journal shows Sprint and Daily Zap rounds side by side.
 - **Observatory.** A path climbs behind the workshop to a copper dome and telescope. The telescope points across the sky of the island.
 
-Work takes place outdoors in Phase 1. Each location opens a short entry, with project links where they apply. The island’s shoreline supports fall and recovery. Exploration uses walking, terrain grounding and camera orbit.
+Work takes place outdoors in Phase 1. The Dream Ocean, Pocket Orbit and HanziZap signs use the official project logos. Selecting a sign opens the same entry as selecting its landmark. The island’s shoreline supports fall and recovery. Exploration uses walking, terrain grounding and camera orbit.
 
 Andi from Dream Ocean is the playable character. He uses the game’s eight-direction walk and sprint art, with the same distance-driven stride and camera-relative facings. As in the game’s default controls, movement sprints unless the pace modifier is held. Assisted routes walk.
 
@@ -23,7 +23,7 @@ Andi from Dream Ocean is the playable character. He uses the game’s eight-dire
 | Destinations | `src/destinations.ts` holds landmark placements, interaction ranges via approach points, and named trail waypoints. Project copy and links live in HTML. |
 | Scene lifecycle | `src/runtime/island.ts` handles lighting, render scheduling, resize, world projection, ray picking, WebGL context changes, and pause and teardown. |
 | World | `src/world/` contains terrain and collision surfaces, custom landmarks, the traveler, vegetation, and the sky, sea, waterfall and gateway shaders. |
-| Workshop | `src/world/workshop.ts` builds the lab, its fixtures and its gyroscope. The ring uses the island clock for motion. The building, cooling bay and bench use separate collision volumes. |
+| Workshop | `src/world/workshop.ts` builds the lab, its fixtures and its gyroscope. The logo keeps its upright outline and solid teal face as it turns around its vertical axis. The building, cooling bay and bench use separate collision volumes. |
 | Exploration | `src/runtime/input.ts`, `walking.ts` and `camera.ts` handle input, damped motion, collision sliding, route finding and camera follow. Assisted walks use terrain-aware grid search, then connect waypoints along clear segments. |
 | Performance and resources | `src/runtime/quality.ts` controls resolution and device budgets. `src/world/geometry.ts` batches static props. `src/runtime/resources.ts` deduplicates cleanup across shared resources. |
 

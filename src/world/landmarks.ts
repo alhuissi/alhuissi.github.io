@@ -1,7 +1,7 @@
 import {
-  CanvasTexture, CapsuleGeometry, DoubleSide, DodecahedronGeometry, ExtrudeGeometry, Group,
-  LatheGeometry, Mesh, MeshBasicMaterial, PlaneGeometry, Shape, ShapeGeometry,
-  SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
+  CapsuleGeometry, DoubleSide, DodecahedronGeometry, ExtrudeGeometry, Group,
+  LatheGeometry, Mesh, Shape, ShapeGeometry,
+  SphereGeometry, TorusGeometry, Vector2, Vector3,
 } from 'three';
 import type { Material, Object3D } from 'three';
 import { destinations } from '../destinations';
@@ -242,26 +242,6 @@ function canopyRoof(parent: Group, y: number, half: number, depth: number, rise:
   }
 }
 
-function arcadeSign() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 384;
-  canvas.height = 105;
-  const ctx = canvas.getContext('2d')!;
-  ctx.fillStyle = '#2c4345';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.strokeStyle = '#f1bc70';
-  ctx.lineWidth = 4;
-  ctx.strokeRect(8, 8, canvas.width - 16, canvas.height - 16);
-  ctx.fillStyle = '#ffe0a2';
-  ctx.font = '800 49px system-ui, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('HANZIZAP', canvas.width / 2, canvas.height / 2 + 2, canvas.width - 54);
-  const texture = new CanvasTexture(canvas);
-  texture.colorSpace = SRGBColorSpace;
-  return new MeshBasicMaterial({ map: texture, toneMapped: false });
-}
-
 function cabinet(parent: Group, x: number, trim: Material) {
   const game = new Group();
   game.position.set(x, .20, .55);
@@ -310,10 +290,8 @@ function arcade(root: Group, collisions: Collisions) {
   for (let i = 0; i < 9; i++) box(hall, brass, .045, .30, .034, (i - 4) * .265, 3.99, 1.005);
   canopyRoof(hall, 3.97, 1.88, 2.64, .61, jade);
   box(hall, brass, .19, .17, 2.7, 0, 4.64, 0);
-  const sign = new Mesh(new PlaneGeometry(2.66, .73), arcadeSign());
-  sign.position.set(0, 2.53, 1.57);
-  hall.add(sign);
-  box(hall, shadowWood, 2.77, .82, .13, 0, 2.53, 1.49);
+  box(hall, shadowWood, 2.77, .28, .13, 0, 2.66, 1.49);
+  box(hall, brass, 2.46, .055, .05, 0, 2.66, 1.58);
 
   for (const px of [-1.95, 1.95]) {
     const lantern = solid(hall, new SphereGeometry(.222, 12, 9), softGlass, px, 2.49, 1.72);

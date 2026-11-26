@@ -1,6 +1,6 @@
 import {
-  AdditiveBlending, CanvasTexture, Color, DoubleSide, ExtrudeGeometry, Group, Mesh,
-  MeshBasicMaterial, PlaneGeometry, ShaderMaterial, Shape, SRGBColorSpace, TorusGeometry, Vector3,
+  AdditiveBlending, CanvasTexture, DoubleSide, ExtrudeGeometry, Group, Mesh,
+  MeshBasicMaterial, PlaneGeometry, Shape, SRGBColorSpace, TorusGeometry, Vector3,
 } from 'three';
 import { destinations } from '../destinations';
 import type { WorldClock } from './atmosphere';
@@ -17,12 +17,13 @@ const cyan = new MeshBasicMaterial({ color: '#6aefeb', toneMapped: false });
 const amber = lanternMaterial(0xffad61, 1.1);
 const rose = new MeshBasicMaterial({ color: '#f589bc', toneMapped: false });
 const logoTeal = '#13cbb7';
-// Front profile traced from the creator's logo. The height is 1.8 times the width.
+// Convert the artwork in alhuissi-mark.svg to a centered, upright Three.js shape.
+const logoPoint = (x: number, y: number) => [(x - 497) / 436, (502 - y) / 436] as const;
 const logoOutline = new Shape()
-  .moveTo(-.025, .89).quadraticCurveTo(0, .91, .028, .89)
-  .lineTo(.50, .48).lineTo(.50, -.51)
-  .lineTo(.028, -.89).quadraticCurveTo(0, -.913, -.027, -.89)
-  .lineTo(-.50, -.51).lineTo(-.50, .48).closePath();
+  .moveTo(...logoPoint(487, 114)).quadraticCurveTo(...logoPoint(498, 105), ...logoPoint(510, 114))
+  .lineTo(...logoPoint(715, 293)).lineTo(...logoPoint(715, 724)).lineTo(...logoPoint(510, 890))
+  .quadraticCurveTo(...logoPoint(498, 900), ...logoPoint(486, 890))
+  .lineTo(...logoPoint(279, 724)).lineTo(...logoPoint(279, 293)).closePath();
 
 const rotorX = 1.85;
 const rotorZ = -.70;
@@ -76,10 +77,7 @@ function spillLight(home: Group) {
   const window = pool(0xf9974d, 3.7, 1.25, .26);
   window.rotation.x = -Math.PI / 2;
   window.position.set(-2.04, .205, 2.72);
-  const halo = pool(0x3fdcdd, 3.1, 3.1, .20);
-  halo.position.set(rotorX, 5.06, rotorZ + .12);
-  halo.rotation.y = .18;
-  home.add(door, window, halo);
+  home.add(door, window);
 }
 
 function gyroscope(home: Group, clock: WorldClock) {
@@ -119,49 +117,18 @@ function gyroscope(home: Group, clock: WorldClock) {
     rib.userData.bake = false;
     rib.castShadow = false;
   }
-  const signal = new ShaderMaterial({
-    toneMapped: false,
-    uniforms: { clock, teal: { value: new Color(logoTeal) }, edge: { value: new Color('#a9f9e9') } },
-    vertexShader: /* glsl */ `
-      uniform float clock;
-      varying vec3 local;
-      varying vec3 viewNormal;
-      void main() {
-        local = position;
-        viewNormal = normalize(normalMatrix * normal);
-        vec3 point = position;
-        point.y += .057 * sin(clock * 1.1);
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(point, 1.0);
-      }
-    `,
-    fragmentShader: /* glsl */ `
-      uniform float clock;
-      uniform vec3 teal;
-      uniform vec3 edge;
-      varying vec3 local;
-      varying vec3 viewNormal;
-      void main() {
-        float bevel = pow(1.0 - clamp(viewNormal.z, 0.0, 1.0), 1.55);
-        float signal = .5 + .5 * sin(local.y * 15.0 - clock * 1.3 + local.x * 2.1);
-        float scan = smoothstep(.90, 1.0, signal);
-        float facet = smoothstep(-.16, .16, local.x + local.y * .21);
-        vec3 face = teal * (.79 + .21 * facet);
-        gl_FragColor = vec4(mix(face, edge, .65 * bevel + .23 * scan), 1.0);
-        #include <colorspace_fragment>
-      }
-    `,
-  });
-  const crystal = new ExtrudeGeometry(logoOutline, { depth: .24, bevelSize: .042, bevelThickness: .062,
-    bevelSegments: 2, curveSegments: 8, steps: 1 });
-  crystal.translate(0, 0, -.12);
-  const core = new Mesh(crystal, signal);
-  core.rotation.set(.14, -.19, .17);
-  cradle.add(core);
+  const crystal = new ExtrudeGeometry(logoOutline, { depth: .12, bevelEnabled: false, curveSegments: 8 });
+  crystal.translate(0, 0, -.06);
+  const core = new Mesh(crystal, new MeshBasicMaterial({ color: logoTeal, toneMapped: false, fog: false }));
+  // Keep the emblem aligned with world up as the gimbal tilts around it.
+  core.position.set(rotorX, 5.15, rotorZ);
+  home.add(core);
 
   return () => {
     inner.rotation.x = .69 + .26 * Math.sin(clock.value * .73);
     inner.rotation.y = -.69 + .53 * Math.sin(clock.value * .51);
     inner.rotation.z = .36 - clock.value * .22;
+    core.rotation.y = .21 * Math.sin(clock.value * .55);
   };
 }
 

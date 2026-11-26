@@ -9,6 +9,7 @@ import { Collisions } from '../world/collision';
 import { bakeSolids } from '../world/geometry';
 import { heightAt, shoreFraction } from '../world/land';
 import { buildLandmarks, guideLights } from '../world/landmarks';
+import { buildProjectSigns } from '../world/projectSigns';
 import { buildTerrain } from '../world/terrain';
 import { createTraveler } from '../world/traveler';
 import { buildVegetation } from '../world/vegetation';
@@ -80,6 +81,7 @@ export function createIsland(ui: Interface) {
   buildAtmosphere(world, clock, quality.light);
   buildTerrain(world);
   const updateLandmarks = buildLandmarks(world, collisions, clock);
+  const projectSigns = buildProjectSigns(world, collisions, invalidate);
   guideLights(world);
   buildVegetation(world, collisions, clock, quality.light);
   bakeSolids(world);
@@ -97,6 +99,7 @@ export function createIsland(ui: Interface) {
         new Vector3(x + width / 2, y + height, z + depth / 2)),
     };
   });
+  const pickTargets = [...bounds, ...projectSigns];
   const project = new Vector3();
   const hit = new Vector3();
   const ground = new Vector3();
@@ -163,7 +166,7 @@ export function createIsland(ui: Interface) {
     ray.setFromCamera(ndc, rig.camera);
     let closest = Infinity;
     let id: DestinationId | null = null;
-    for (const place of bounds) {
+    for (const place of pickTargets) {
       if (!ray.ray.intersectBox(place.box, hit)) continue;
       const distance = hit.distanceTo(ray.ray.origin);
       if (distance < closest) {
