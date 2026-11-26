@@ -5,7 +5,7 @@
 The island is the homepage. The opening composition places the ringed planet above a terraced island, with Alfredo’s introduction alongside it. Close to ground level, lamplight and trails lead past conifers, reeds and rock outcrops to the workshop. The four surrounding landmarks each have a silhouette visible from several angles.
 
 - **Workshop.** Two tiled roofs, arched windows, an outdoor workbench and a guitar connect engineering and music.
-- **Dream Ocean.** A weathered stone gateway, cool foliage and a waterfall connect the site to the game’s coastal imagery. The journal shows a tactical battle with an attack forecast.
+- **Dream Ocean.** A weathered stone gateway, cool foliage and a waterfall connect the site to the game’s coastal imagery. The journal shows Andi lining up Tidal Collapse in Citryan.
 - **Pocket Orbit.** A compact original spacecraft sits on a marked launchpad with approach lights. The journal shows a shuttle approaching Arven from space and links to the browser demo and Steam.
 - **HanziZap.** The arcade uses a warm sign, ribbed roofs, lanterns and two cabinets. The journal shows Sprint and Daily Zap rounds side by side.
 - **Observatory.** A path climbs behind the workshop to a copper dome and telescope. The telescope points across the sky of the island.
@@ -33,7 +33,7 @@ Reviewed the target repository and its earlier Three.js worlds, The Deval’s is
 | Asset | Provenance |
 | --- | --- |
 | Andi locomotion sprites | Unmodified Dream Ocean production atlases. See [source and attribution notes](../island-media/andi/SOURCES.txt). |
-| Dream Ocean media | The Dream Ocean site’s `assets/dream-ocean-wordmark.webp` and `assets/tactical-forecast.webp` gameplay capture. |
+| Dream Ocean media | The Dream Ocean site’s `assets/dream-ocean-wordmark.webp` and a November 26, 2026 gameplay capture from the `tactical-tidal-collapse` preset of the local game build at `c13fc0092`, using the approved Aquamarine battle HUD. |
 | Pocket Orbit media | The official `src/assets/brand/pocket-orbit-logo.webp` and gameplay capture `welcome/arven-orbit.webp` from the Pocket Orbit checkout. |
 | HanziZap media | The original dark wordmark paths from `Artwork/AppStore/Marketing/source/en-US-search-results.svg`, and raw inner-display Sprint and Daily Zap captures from `Artwork/AppStore/Duo/raw/inner/en-US/` in the HanziZap checkout. The stills are cropped to the app content. |
 | Desktop and portrait posters | WebP captures of the shipped island in Chrome with the interface hidden. |
