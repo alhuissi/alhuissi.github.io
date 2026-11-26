@@ -1,9 +1,9 @@
 import {
-  AdditiveBlending, BackSide, BufferGeometry, DoubleSide, Float32BufferAttribute, Mesh, NearestFilter, PlaneGeometry,
-  Points, ShaderMaterial, SphereGeometry, SRGBColorSpace, TextureLoader,
+  AdditiveBlending, BackSide, BufferGeometry, Color, DoubleSide, Float32BufferAttribute, Mesh, NearestFilter, PlaneGeometry,
+  Points, ShaderMaterial, SphereGeometry, SRGBColorSpace, TextureLoader, Vector3,
 } from 'three';
 import type { Group } from 'three';
-import { heightAt, pool, poolLevel, randomFrom, rimPoint, seaLevel, shoreFraction, spill, spillAngle } from './land';
+import { heightAt, pool, poolLanterns, poolLevel, randomFrom, rimPoint, seaLevel, shoreFraction, spill, spillAngle } from './land';
 
 export type WorldClock = { value: number };
 
@@ -258,6 +258,10 @@ const seaFragment = /* glsl */ `
   uniform float clock;
   uniform float isPool;
   varying vec3 worldPoint;
+  #ifdef POOL_LAMPS
+  uniform vec3 lampPos[3];
+  uniform vec3 lampTint[3];
+  #endif
   ${noise}
   ${horizonColor}
 
@@ -282,6 +286,16 @@ const seaFragment = /* glsl */ `
     mirrored.y = abs(mirrored.y);
     color = mix(color, nightHorizon(mirrored, clock), fresnel * .7);
     color += mix(vec3(.10, .12, .32), vec3(.20, .62, .62), isPool) * glint * (.18 + isPool * .5);
+    #ifdef POOL_LAMPS
+    // Lantern light broken into shimmering streaks by the ripples.
+    for (int i = 0; i < 3; i++) {
+      vec3 toLamp = lampPos[i] - worldPoint;
+      float d = length(toLamp);
+      vec3 h = normalize(toLamp / d + view);
+      float spec = pow(max(dot(n, h), 0.0), 70.0);
+      color += lampTint[i] * (spec * 2.4 + .05 / (1.0 + d * d * .35)) / (1.0 + d * d * .045);
+    }
+    #endif
     float haze = smoothstep(76.0, 370.0, distanceToEye) * (1.0 - isPool);
     color = mix(color, nightHorizon(-view, clock), haze);
     gl_FragColor = vec4(color, 1.0);
@@ -532,8 +546,14 @@ export function buildAtmosphere(root: Group, clock: WorldClock, low: boolean) {
     uniforms: { clock, isPool: { value: isPool } },
     vertexShader: skinVertex, fragmentShader: seaFragment,
   });
+  const poolWater = water(1);
+  const lamps = [...poolLanterns().map(([x, z]) => new Vector3(x, heightAt(x, z) + .78, z)),
+    new Vector3(-15.2, heightAt(-15.2, -1.4) + 2.4, -1.4)];
+  poolWater.defines = { POOL_LAMPS: '' };
+  poolWater.uniforms.lampPos = { value: lamps };
+  poolWater.uniforms.lampTint = { value: [new Color(1, .62, .26), new Color(1, .62, .26), new Color(.4, .66, 1)] };
   flatSurface(root, 900, 900, 0, seaLevel, 0, water(0));
-  buildPool(root, water(1));
+  buildPool(root, poolWater);
 
   flatSurface(root, 830, 830, 0, -13.2, 0, new ShaderMaterial({
     uniforms: { clock }, vertexShader: skinVertex, fragmentShader: mistFragment,

@@ -1,5 +1,5 @@
 import {
-  AdditiveBlending, CanvasTexture, DoubleSide, ExtrudeGeometry, Group, Mesh,
+  AdditiveBlending, CanvasTexture, ConeGeometry, DoubleSide, ExtrudeGeometry, Group, Mesh,
   MeshBasicMaterial, PlaneGeometry, Shape, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector3,
 } from 'three';
 import { destinations } from '../destinations';
@@ -296,6 +296,70 @@ function nightDetails(home: Group) {
   for (const side of [-1, 1]) box(home, glow, .03, .025, 4.9, side * 3.98, .14, .02);
 }
 
+// A ginger cat keeps watch from the bench, tail swaying, ears twitching, eyes catching the light.
+function benchCat(root: Group, x: number, y: number, z: number, heading: number, clock: WorldClock) {
+  const fur = standard('#d9884a', .86);
+  const stripe = standard('#a85a2c', .88);
+  const cream = standard('#f2d6b0', .88);
+  const eye = new MeshBasicMaterial({ color: '#c8ff7a', toneMapped: false });
+  const ball = new SphereGeometry(1, 14, 10);
+  const cat = new Group();
+  cat.name = 'Workshop cat';
+  cat.position.set(x, y, z);
+  cat.rotation.y = heading;
+  cat.scale.setScalar(1.35);
+  root.add(cat);
+  const part = (parent: Group, material: typeof fur | typeof eye, sx: number, sy: number, sz: number,
+    px: number, py: number, pz: number) => {
+    const mesh = new Mesh(ball, material);
+    mesh.scale.set(sx, sy, sz);
+    mesh.position.set(px, py, pz);
+    mesh.castShadow = material !== eye;
+    parent.add(mesh);
+    return mesh;
+  };
+  part(cat, fur, .15, .12, .18, 0, .1, -.04);
+  part(cat, fur, .105, .16, .1, 0, .21, .06);
+  part(cat, cream, .07, .1, .05, 0, .2, .13);
+  for (const side of [-1, 1]) {
+    part(cat, cream, .04, .03, .055, side * .055, .025, .16);
+    part(cat, stripe, .03, .07, .1, side * .135, .12, -.05);
+  }
+  const head = new Group();
+  head.position.set(0, .38, .09);
+  cat.add(head);
+  part(head, fur, .105, .09, .095, 0, 0, 0);
+  part(head, stripe, .06, .02, .06, 0, .075, -.01);
+  part(head, cream, .05, .036, .04, 0, -.028, .075);
+  for (const side of [-1, 1]) part(head, eye, .016, .019, .01, side * .042, .012, .088);
+  const ears = [-1, 1].map((side) => {
+    const ear = new Mesh(new ConeGeometry(.042, .085, 4), fur);
+    ear.position.set(side * .058, .085, -.005);
+    ear.rotation.set(-.12, Math.PI / 4, side * -.32);
+    ear.castShadow = true;
+    head.add(ear);
+    return ear;
+  });
+  const tail = new Group();
+  tail.position.set(.06, .04, -.2);
+  cat.add(tail);
+  for (let i = 0; i < 7; i++) {
+    const t = i / 6;
+    const angle = t * 2.1;
+    part(tail, i % 2 ? stripe : fur, .036 - t * .008, .036 - t * .008, .05,
+      Math.sin(angle) * .22, .01 + t * .03, -Math.cos(angle) * .1 + .1 - t * .02);
+  }
+  return () => {
+    const t = clock.value;
+    tail.rotation.y = Math.sin(t * 1.1) * .28;
+    tail.rotation.z = Math.sin(t * .7 + 1) * .08;
+    head.rotation.y = Math.sin(t * .23) * .35 + Math.sin(t * .061) * .2;
+    head.rotation.x = Math.sin(t * .31) * .06;
+    const twitch = Math.max(0, Math.sin(t * .9) - .94) * 6;
+    ears[0].rotation.z = .32 + twitch * .35;
+  };
+}
+
 export function buildWorkshop(root: Group, collisions: Collisions, clock: WorldClock) {
   const [x, z] = destinations.workshop.landmark;
   const y = heightAt(x, z);
@@ -378,5 +442,11 @@ export function buildWorkshop(root: Group, collisions: Collisions, clock: WorldC
   collisions.add(mass.x, mass.z, 8.07, 4.94, mass.y, 4.10, home.rotation.y);
   const coolant = home.localToWorld(new Vector3(2.77, .41, 2.44));
   collisions.add(coolant.x, coolant.z, 2.30, .62, coolant.y, 2.09, home.rotation.y);
-  return gyroscope(rotorMount, clock);
+  const perch = home.localToWorld(new Vector3(2.72, 0, 4.04));
+  const idle = benchCat(root, perch.x, benchY + .515, perch.z, home.rotation.y, clock);
+  const spin = gyroscope(rotorMount, clock);
+  return () => {
+    spin();
+    idle();
+  };
 }

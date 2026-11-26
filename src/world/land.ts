@@ -55,3 +55,19 @@ export function heightAt(x: number, z: number) {
   return .42 + Math.sin(x * .19 + z * .24) * .29 + Math.cos(z * .31 - x * .12) * .32
     + Math.sin(x * .36 + z * .18) * .15 + summit + launchRise + ledge + arcadeRise - channel;
 }
+
+/** Two lanterns on the inland bank of the pool, so its ripples catch warm light at night. */
+export function poolLanterns(): Point[] {
+  const toward = Math.atan2(-pool[1], -pool[0]);
+  return [-.95, 1.05].map((offset) => {
+    const angle = toward + offset;
+    for (let r = 1.5; r < 9; r += .1) {
+      const x = pool[0] + Math.cos(angle) * r;
+      const z = pool[1] + Math.sin(angle) * r;
+      if (heightAt(x, z) > poolLevel + .15) {
+        return [x + Math.cos(angle) * .55, z + Math.sin(angle) * .55] as Point;
+      }
+    }
+    return [pool[0] + Math.cos(angle) * 4, pool[1] + Math.sin(angle) * 4] as Point;
+  });
+}

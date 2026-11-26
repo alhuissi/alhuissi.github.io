@@ -4,7 +4,7 @@ export const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 export class Quality {
   private samples = 0;
   private slow = 0;
-  private adjusted = false;
+  private step = 0;
   private scale = 1;
   readonly light = touchControl.matches || (navigator.hardwareConcurrency > 0 && navigator.hardwareConcurrency <= 4);
 
@@ -14,8 +14,14 @@ export class Quality {
       Math.sqrt(budget / Math.max(1, width * height))) * this.scale;
   }
 
+  /** True once frames stayed slow after the first resolution drop: render without bloom. */
+  get plain() {
+    return this.step >= 2;
+  }
+
+  // Each step waits for a fresh window of frames, so a brief hitch never costs quality.
   measure(seconds: number) {
-    if (this.adjusted || seconds <= 0) return false;
+    if (this.step >= 3 || seconds <= 0) return false;
     this.samples++;
     if (seconds > .031) this.slow++;
     if (this.samples < 100) return false;
@@ -23,8 +29,8 @@ export class Quality {
     this.samples = 0;
     this.slow = 0;
     if (shouldReduce) {
-      this.scale = .79;
-      this.adjusted = true;
+      this.step++;
+      this.scale = [1, .79, .79, .64][this.step];
     }
     return shouldReduce;
   }

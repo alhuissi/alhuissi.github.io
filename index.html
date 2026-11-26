@@ -10,17 +10,81 @@
   <meta property="og:title" content="alhuissi · The World Between Worlds">
   <meta property="og:description" content="Explore a playable island by alhuissi, the studio behind Dream Ocean, Pocket Orbit &amp; HanziZap.">
   <meta property="og:url" content="https://alhuissi.com/">
-  <meta property="og:image" content="https://alhuissi.com/island-media/vista.webp">
+  <meta property="og:site_name" content="alhuissi">
+  <meta property="og:image" content="https://alhuissi.com/island-media/social-card.jpg">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="An inhabited island floating above a moonlit sea of clouds beneath a ringed planet and a multicolored nebula.">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:creator" content="@alhuissi">
   <link rel="canonical" href="https://alhuissi.com/">
   <link rel="icon" type="image/svg+xml" href="./island-media/alhuissi-mark.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="./island-media/favicon-32.png">
+  <link rel="apple-touch-icon" href="./island-media/apple-touch-icon.png">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://alhuissi.com/#studio",
+        "name": "alhuissi",
+        "url": "https://alhuissi.com/",
+        "logo": "https://alhuissi.com/island-media/icon-512.png",
+        "description": "An independent studio building games, apps & interactive worlds.",
+        "founder": { "@type": "Person", "name": "Alfredo L’Huissier" },
+        "email": "alfredo@alhuissi.com",
+        "sameAs": ["https://x.com/alhuissi", "https://github.com/alhuissi"]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://alhuissi.com/#website",
+        "url": "https://alhuissi.com/",
+        "name": "alhuissi · The World Between Worlds",
+        "publisher": { "@id": "https://alhuissi.com/#studio" }
+      },
+      {
+        "@type": "VideoGame",
+        "name": "Dream Ocean",
+        "description": "A psychological fantasy RPG with tactical encounters and party battles.",
+        "url": "https://dreamoceangame.com/",
+        "image": "https://alhuissi.com/island-media/dream-ocean-citryan-tactics.webp",
+        "genre": ["RPG", "Tactics"],
+        "gamePlatform": "PC",
+        "sameAs": "https://store.steampowered.com/app/4568770/Dream_Ocean/",
+        "author": { "@id": "https://alhuissi.com/#studio" }
+      },
+      {
+        "@type": "VideoGame",
+        "name": "Pocket Orbit",
+        "description": "A space farming adventure: fly between planets, put down roots and grow a garden, solo or with a friend.",
+        "url": "https://pocketorbit.com/",
+        "image": "https://alhuissi.com/island-media/pocket-orbit-space.webp",
+        "genre": ["Adventure", "Farming"],
+        "gamePlatform": ["PC", "Web browser"],
+        "sameAs": "https://store.steampowered.com/app/5461120/Pocket_Orbit/",
+        "author": { "@id": "https://alhuissi.com/#studio" }
+      },
+      {
+        "@type": "MobileApplication",
+        "name": "HanziZap",
+        "description": "A Mandarin learning arcade with quick picture-matching rounds and everyday conversation practice.",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "iOS",
+        "image": "https://alhuissi.com/island-media/hanzizap.webp",
+        "sameAs": "https://apps.apple.com/us/app/hanzizap-learn-chinese/id6828745593",
+        "author": { "@id": "https://alhuissi.com/#studio" }
+      }
+    ]
+  }
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&amp;family=Geist:wght@300..800&amp;family=Geist+Mono:wght@400..600&amp;display=swap">
-  <link rel="stylesheet" href="./island.css?v=226dea94049f">
-  <script type="module" src="./island-runtime/app.js?v=8da09f15a5e4"></script>
+  <link rel="stylesheet" href="./island.css?v=1908a1a26562">
+  <script type="module" src="./island-runtime/app.js?v=9023eff4697b"></script>
 </head>
 <body>
   <svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -234,14 +298,24 @@
       <article class="entry workshop" id="workshop" aria-labelledby="workshop-title">
         <a class="entry-close" href="#world" aria-label="Close the workshop"><svg class="icon" aria-hidden="true"><use href="#icon-close"/></svg></a>
         <p class="entry-location">The Workshop</p>
-        <h2 id="workshop-title">Alfredo L’Huissier</h2>
-        <p class="about-lead">I’m an independent game developer and musician. I make games, write music, and build the tools I use along the way.</p>
+        <h2 id="workshop-title">alhuissi studio</h2>
+        <p class="about-lead">An independent studio building games, apps &amp; interactive worlds.</p>
+        <ul class="studio-work" aria-label="What we make">
+          <li><a href="#dream-ocean"><strong>Dream Ocean</strong><span>Psychological fantasy RPG · PC</span></a></li>
+          <li><a href="#pocket-orbit"><strong>Pocket Orbit</strong><span>Space farming adventure · PC &amp; web</span></a></li>
+          <li><a href="#hanzizap"><strong>HanziZap</strong><span>Mandarin learning arcade · iOS</span></a></li>
+        </ul>
+        <h3 class="studio-heading">The founder</h3>
         <figure class="entry-art about-portrait">
           <img src="./island-media/alfredo-portrait.webp?v=022b9efbe3ce" width="960" height="960" alt="Alfredo L’Huissier wearing sunglasses in front of two monitors showing a game battle." loading="lazy" decoding="async">
         </figure>
+        <p class="founder-name">Alfredo L’Huissier</p>
+        <p>I’m an independent game developer and musician. I make games, write music, and build the tools I use along the way.</p>
         <p class="about-projects">I’m working on <a href="#dream-ocean">Dream Ocean</a>, a story-driven RPG about memory, and <a href="#pocket-orbit">Pocket Orbit</a>, where you fly a ship as a cat and grow a garden on a new planet. I also made <a href="#hanzizap">HanziZap</a> for learning Mandarin in quick arcade rounds.</p>
+        <h3 class="studio-heading">Get in touch</h3>
+        <p>For collaborations, press, publishing or just to say hello.</p>
         <nav class="entry-links" aria-label="Contact and updates">
-          <a class="primary-link" href="mailto:alfredo@alhuissi.com">Email me</a>
+          <a class="primary-link" href="mailto:alfredo@alhuissi.com">alfredo@alhuissi.com</a>
           <a href="https://x.com/alhuissi">@alhuissi on X</a>
           <a href="https://github.com/alhuissi">GitHub</a>
         </nav>

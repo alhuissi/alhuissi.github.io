@@ -127,7 +127,7 @@ export function createIsland(ui: Interface) {
   const collisions = new Collisions();
   const clock = { value: 0 };
   const traveler = createTraveler(walkSpeed, invalidate);
-  scene.add(traveler.root);
+  scene.add(traveler.root, traveler.dust);
   buildAtmosphere(world, clock, quality.light);
   buildTerrain(world);
   let filmicInMaterials = false;
@@ -137,7 +137,7 @@ export function createIsland(ui: Interface) {
     invalidate();
   });
   const projectSigns = buildProjectSigns(world, collisions, invalidate);
-  guideLights(world, !quality.light);
+  guideLights(world, !quality.light, clock, collisions);
   buildVegetation(world, collisions, clock, quality.light);
   bakeSolids(world);
 
@@ -181,6 +181,7 @@ export function createIsland(ui: Interface) {
   let lost = false;
   let disposed = false;
   let firstFrame = true;
+  let arrived = false;
   let snap = true;
   let frame = 0;
   let previous = 0;
@@ -347,6 +348,10 @@ export function createIsland(ui: Interface) {
       }
     }
     if (!reduced) clock.value += dt;
+    if (!arrived && traveler.ready) {
+      arrived = true;
+      if (!reduced && mode === 'overview' && !paused) rig.arrive();
+    }
     updateLandmarks();
     rig.update(dt, walker.position, mode === 'walk', clock.value, reduced, snap);
     traveler.update(walker.position, walker.heading, dt, rig.camera,
@@ -360,7 +365,14 @@ export function createIsland(ui: Interface) {
     }
     setSigns();
 
-    if (!reduced && quality.measure(elapsed)) resize();
+    if (!reduced && quality.measure(elapsed)) {
+      // Materials already tone-map themselves, so dropping bloom renders the same colours directly.
+      if (quality.plain && composer) {
+        composer.dispose();
+        composer = null;
+      }
+      resize();
+    }
     if (!reduced || walker.falling || walker.walkingRoute || walker.moving || input.axes.lengthSq() > 0 || settling > 0) {
       invalidate();
     } else {

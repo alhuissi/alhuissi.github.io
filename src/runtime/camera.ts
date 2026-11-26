@@ -12,6 +12,7 @@ export class IslandCamera {
   private readonly target = new Vector3();
   private readonly sample = new Vector3();
   private initialized = false;
+  private intro = 0;
 
   constructor(private readonly land: Collisions) {}
 
@@ -24,6 +25,11 @@ export class IslandCamera {
   turn(dx: number, dy: number) {
     this.yaw = (this.yaw - dx * .0078) % (Math.PI * 2);
     this.pitch = MathUtils.clamp(this.pitch + dy * .0057, .16, 1.08);
+  }
+
+  /** A slow swing down from the sky onto the overview framing, played once on arrival. */
+  arrive() {
+    this.intro = 1;
   }
 
   recenter() {
@@ -43,9 +49,25 @@ export class IslandCamera {
       this.position.set(12.9 + drift, portrait ? 38.5 : 24.6, distance);
       this.aim.set(portrait ? -.25 : -9.75 * Math.min(1, this.aspect / 1.46),
         portrait ? distance * .229 : 7.9, 0);
+      if (this.intro > 0 && !reduced) {
+        this.intro = Math.max(0, this.intro - dt / 4.6);
+        const r = this.intro;
+        const f = r * r * (3 - 2 * r);
+        const angle = -.38 * f;
+        const dx = this.position.x - this.aim.x;
+        const dz = this.position.z - this.aim.z;
+        const stretch = 1 + .14 * f;
+        this.position.set(
+          this.aim.x + (dx * Math.cos(angle) - dz * Math.sin(angle)) * stretch,
+          this.position.y + 10 * f,
+          this.aim.z + (dx * Math.sin(angle) + dz * Math.cos(angle)) * stretch,
+        );
+        this.aim.y += 3.5 * f;
+      }
     }
+    if (walking || reduced) this.intro = 0;
 
-    const immediate = !this.initialized || snap || reduced;
+    const immediate = !this.initialized || snap || reduced || this.intro > 0;
     const a = immediate ? 1 : 1 - Math.exp(-dt * (walking ? 9 : 3.5));
     this.camera.position.lerp(this.position, a);
     this.target.lerp(this.aim, walking ? Math.min(1, a * 1.22) : a);

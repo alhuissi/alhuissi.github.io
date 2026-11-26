@@ -1,9 +1,10 @@
 import {
-  Color, Group, MathUtils, Mesh, NearestFilter, PlaneGeometry, ShaderMaterial,
+  CanvasTexture, Color, Group, MathUtils, Mesh, NearestFilter, PlaneGeometry, ShaderMaterial,
   Sprite, SpriteMaterial, SRGBColorSpace, TextureLoader, Vector3,
 } from 'three';
 import type { PerspectiveCamera } from 'three';
 import { heightAt } from './land';
+import { reduceMotion } from '../runtime/quality';
 
 const rows = 8;
 const strideFrames = 8;
@@ -62,6 +63,54 @@ function createAtlas(loader: TextureLoader, name: string, columns: number, onLoa
   };
 }
 
+// Small puffs kicked up at each sprinting footfall; they stay where they land and fade.
+function footstepDust() {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 64;
+  const context = canvas.getContext('2d')!;
+  const gradient = context.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gradient.addColorStop(0, 'rgba(255,255,255,1)');
+  gradient.addColorStop(.45, 'rgba(255,255,255,.45)');
+  gradient.addColorStop(1, 'rgba(255,255,255,0)');
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, 64, 64);
+  const map = new CanvasTexture(canvas);
+  const group = new Group();
+  group.name = 'Footstep dust';
+  const life = .75;
+  const puffs = Array.from({ length: 14 }, () => {
+    const sprite = new Sprite(new SpriteMaterial({
+      map, color: '#a99fc8', transparent: true, depthWrite: false, toneMapped: false, opacity: 0,
+    }));
+    sprite.visible = false;
+    group.add(sprite);
+    return { sprite, age: life, drift: new Vector3() };
+  });
+  let next = 0;
+  return {
+    group,
+    spawn(x: number, z: number, dx: number, dz: number) {
+      const puff = puffs[next];
+      next = (next + 1) % puffs.length;
+      puff.age = 0;
+      puff.sprite.position.set(x - dx * .25 + (Math.random() - .5) * .2, heightAt(x, z) + .12, z - dz * .25);
+      puff.drift.set(-dx * .35 + (Math.random() - .5) * .3, .32, -dz * .35 + (Math.random() - .5) * .3);
+      puff.sprite.visible = true;
+    },
+    update(dt: number) {
+      for (const puff of puffs) {
+        if (puff.age >= life) continue;
+        puff.age = Math.min(life, puff.age + dt);
+        const t = puff.age / life;
+        puff.sprite.position.addScaledVector(puff.drift, dt * (1 - t));
+        puff.sprite.scale.setScalar(.28 + t * .75);
+        puff.sprite.material.opacity = .34 * (1 - t) * Math.min(1, t * 6);
+        puff.sprite.visible = puff.age < life;
+      }
+    },
+  };
+}
+
 export function createTraveler(walkSpeed: number, invalidate: () => void) {
   const root = new Group();
   root.name = 'Andi';
@@ -92,6 +141,7 @@ export function createTraveler(walkSpeed: number, invalidate: () => void) {
   }));
   shadow.position.y = .049;
   root.add(shadow);
+  const dust = footstepDust();
   const planeNormal = new Vector3(0, 0, 1);
   const groundNormal = new Vector3();
   const referenceScale = referenceWalkSpeed / walkSpeed;
@@ -100,8 +150,10 @@ export function createTraveler(walkSpeed: number, invalidate: () => void) {
   let stride = 0;
   let initialized = false;
 
+  let lastFrame = -1;
   return {
     root,
+    dust: dust.group,
     get ready() { return walking.loaded; },
     update(position: Vector3, heading: number, dt: number, camera: PerspectiveCamera,
       walkingPace: boolean, falling: boolean, teleport: boolean) {
@@ -129,6 +181,12 @@ export function createTraveler(walkSpeed: number, invalidate: () => void) {
 
       const useSprint = gait === 'sprint' && sprinting.loaded;
       const frame = Math.floor(stride * strideFrames);
+      // Footfalls land on frames 1 and 5 of the eight-frame sprint.
+      if (useSprint && frame !== lastFrame && (frame === 1 || frame === 5) && !reduceMotion.matches && distance > 0) {
+        dust.spawn(position.x, position.z, dx / distance, dz / distance);
+      }
+      lastFrame = useSprint ? frame : -1;
+      dust.update(dt);
       walking.sprite.visible = walking.loaded && !useSprint;
       sprinting.sprite.visible = useSprint;
       if (useSprint) {

@@ -1,12 +1,12 @@
 import {
-  AdditiveBlending, CanvasTexture, DodecahedronGeometry, ExtrudeGeometry, Group, Mesh, MeshBasicMaterial,
+  AdditiveBlending, BufferGeometry, CanvasTexture, DodecahedronGeometry, Float32BufferAttribute, Points, ShaderMaterial, ExtrudeGeometry, Group, Mesh, MeshBasicMaterial,
   PlaneGeometry, PointLight, Shape, ShapeGeometry, SphereGeometry, Sprite, SpriteMaterial, TorusGeometry, Vector3,
 } from 'three';
 import type { Material, Object3D } from 'three';
 import { destinations } from '../destinations';
 import type { DestinationId } from '../destinations';
 import { box, column, lanternMaterial, solid, standard, volume } from './geometry';
-import { heightAt, randomFrom } from './land';
+import { heightAt, poolLanterns, randomFrom } from './land';
 import { portalSurface } from './atmosphere';
 import type { WorldClock } from './atmosphere';
 import type { Collisions } from './collision';
@@ -357,14 +357,64 @@ function halo(root: Group, color: number, x: number, y: number, z: number, size:
   root.add(sprite);
 }
 
-export function guideLights(root: Group, rich: boolean) {
+// Moths circle each lamp head on erratic little orbits.
+function moths(root: Group, heads: Vector3[], clock: WorldClock) {
+  const random = randomFrom(5521);
+  const positions: number[] = [];
+  const phases: number[] = [];
+  const radii: number[] = [];
+  for (const head of heads) {
+    for (let i = 0; i < 3; i++) {
+      positions.push(head.x, head.y, head.z);
+      phases.push(random() * 6.283);
+      radii.push(.17 + random() * .22);
+    }
+  }
+  const geometry = new BufferGeometry();
+  geometry.setAttribute('position', new Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('phase', new Float32BufferAttribute(phases, 1));
+  geometry.setAttribute('radius', new Float32BufferAttribute(radii, 1));
+  const swarm = new Points(geometry, new ShaderMaterial({
+    uniforms: { clock },
+    transparent: true, depthWrite: false, toneMapped: false, blending: AdditiveBlending,
+    vertexShader: /* glsl */ `
+      uniform float clock;
+      attribute float phase;
+      attribute float radius;
+      varying float fade;
+      void main() {
+        float t = clock * (2.4 + fract(phase * 7.13) * 2.2) + phase;
+        vec3 p = position + vec3(cos(t) * radius, sin(t * 1.7 + phase) * .13 + .06, sin(t * 1.3) * radius);
+        p += vec3(sin(t * 9.1), cos(t * 11.3), sin(t * 8.7)) * .03;
+        vec4 view = modelViewMatrix * vec4(p, 1.0);
+        fade = 1.0 - smoothstep(30.0, 48.0, -view.z);
+        gl_PointSize = clamp(34.0 / max(1.0, -view.z), 1.2, 3.6);
+        gl_Position = projectionMatrix * view;
+      }
+    `,
+    fragmentShader: /* glsl */ `
+      varying float fade;
+      void main() {
+        float r = length(gl_PointCoord - .5);
+        gl_FragColor = vec4(vec3(1.0, .9, .74) * exp(-r * r * 24.0) * .85 * fade, 1.0);
+        #include <colorspace_fragment>
+      }
+    `,
+  }));
+  swarm.frustumCulled = false;
+  root.add(swarm);
+}
+
+export function guideLights(root: Group, rich: boolean, clock: WorldClock, collisions: Collisions) {
   const post = standard('#3c3a44', .6, .35);
   const glass = lanternMaterial(0xffc672, 2.4);
   const locations = [[2.9, 17.6], [.25, 14.7], [2.45, 10.7], [-1.4, 8.35], [-4.88, 5.6], [-8.52, 3.55],
     [-12.32, 2.31], [6.28, 5.4], [9.2, 2.73], [11.55, -.85], [7.3, 11.5], [10.1, 14.65], [-7.98, -.65],
     [-8.35, -5.9], [-6.55, -9.09]];
   const random = randomFrom(71893);
-  for (const [x, z] of locations) {
+  const heads: Vector3[] = [];
+  const bank = poolLanterns();
+  for (const [x, z] of [...locations, ...bank]) {
     const y = heightAt(x, z);
     const top = .64 + random() * .22;
     column(root, post, .055, .08, top, x, y + top * .5, z, 7);
@@ -375,7 +425,10 @@ export function guideLights(root: Group, rich: boolean) {
     heater.rotation.y = Math.PI / 4;
     halo(root, 0xffb25c, x, y + top, z, 1.05, .55);
     groundPool(root, 0xffa04a, x, z, 3.4, .34);
+    heads.push(new Vector3(x, y + top, z));
   }
+  for (const [x, z] of bank) collisions.add(x, z, .3, .3, heightAt(x, z), 1, 0);
+  moths(root, heads, clock);
 
   // A handful of real lights so the landmarks cast coloured light on the meadow at night.
   const lamps: [number, number, number, number, number, number][] = [

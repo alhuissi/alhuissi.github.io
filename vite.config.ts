@@ -21,7 +21,13 @@ export default defineConfig({
       output: {
         entryFileNames: 'app.js',
         chunkFileNames: 'chunks/[name]-[hash].js',
-        manualChunks: (id) => /\/node_modules\/three\/(src|build)\//.test(id) ? 'three' : undefined,
+        // index.html loads app.js?v=<hash>, so chunks must never import from app.js: a bare
+        // "../app.js" is a second module URL and would run the whole entry again.
+        manualChunks: (id) => {
+          if (/\/node_modules\/three\/(src|build)\//.test(id)) return 'three';
+          if (id.includes('preload-helper') || /\/src\/(destinations|journal|runtime\/quality)\.ts$/.test(id)) return 'shared';
+          return undefined;
+        },
       },
     },
   },
