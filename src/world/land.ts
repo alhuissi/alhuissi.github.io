@@ -2,7 +2,8 @@ import { destinations } from '../destinations';
 import type { Point } from '../destinations';
 
 export const islandRadius = [26, 20] as const;
-export const seaLevel = -15.4;
+// The Dream Ocean lies far below: the island floats well clear of it.
+export const seaLevel = -42;
 export const poolLevel = -.45;
 export const pool: Point = [-16.4, 7.85];
 export const spillAngle = 2.41;

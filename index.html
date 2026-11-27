@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b0e21">
-  <title>alhuissi · The World Between Worlds</title>
+  <title>alhuissi studio</title>
   <meta name="description" content="alhuissi is an independent studio building games, apps &amp; interactive worlds. Explore a playable island and the home of Dream Ocean, Pocket Orbit &amp; HanziZap.">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="alhuissi · The World Between Worlds">
+  <meta property="og:title" content="alhuissi studio">
   <meta property="og:description" content="Explore a playable island by alhuissi, the studio behind Dream Ocean, Pocket Orbit &amp; HanziZap.">
   <meta property="og:url" content="https://alhuissi.com/">
   <meta property="og:site_name" content="alhuissi">
@@ -15,7 +15,7 @@
   <meta property="og:image:type" content="image/jpeg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="An inhabited island floating above a moonlit sea of clouds beneath a ringed planet and a multicolored nebula.">
+  <meta property="og:image:alt" content="An inhabited island floating high above a shimmering ocean, its waterfalls pouring into the sea beneath a ringed planet and a multicolored nebula.">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:creator" content="@alhuissi">
   <link rel="canonical" href="https://alhuissi.com/">
@@ -42,7 +42,7 @@
         "@type": "WebSite",
         "@id": "https://alhuissi.com/#website",
         "url": "https://alhuissi.com/",
-        "name": "alhuissi · The World Between Worlds",
+        "name": "alhuissi studio",
         "publisher": { "@id": "https://alhuissi.com/#studio" }
       },
       {
@@ -83,8 +83,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&amp;family=Geist:wght@300..800&amp;family=Geist+Mono:wght@400..600&amp;display=swap">
-  <link rel="stylesheet" href="./island.css?v=1908a1a26562">
-  <script type="module" src="./island-runtime/app.js?v=9023eff4697b"></script>
+  <link rel="stylesheet" href="./island.css?v=78b6f3883119">
+  <script type="module" src="./island-runtime/app.js?v=eb6082a99863"></script>
 </head>
 <body>
   <svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -111,6 +111,14 @@
     </symbol>
     <symbol id="icon-scope" viewBox="0 0 24 24">
       <path d="m3 10 15-7 2.5 5L6 15l-3-5ZM11.5 13v8m0-5L7 21m4.5-5 4.5 5"/>
+    </symbol>
+    <symbol id="icon-game" viewBox="0 0 24 24">
+      <path d="M7.5 7h9a5 5 0 0 1 4.9 6l-.8 3.8a2.4 2.4 0 0 1-4.1 1.1L14.6 16H9.4l-1.9 1.9a2.4 2.4 0 0 1-4.1-1.1L2.6 13a5 5 0 0 1 4.9-6Z"/>
+      <path d="M7.5 10v4M5.5 12h4M15.5 11.2h.01M17.8 13h.01"/>
+    </symbol>
+    <symbol id="icon-phone" viewBox="0 0 24 24">
+      <rect x="6.5" y="2.5" width="11" height="19" rx="2.6"/>
+      <path d="M10.5 18.5h3"/>
     </symbol>
     <symbol id="icon-reset" viewBox="0 0 24 24">
       <path d="M4 12a8 8 0 1 1 2.4 5.7M4 7v5h5"/>
@@ -143,10 +151,8 @@
       </div>
 
       <div class="identity">
-        <p class="world-name"><span aria-hidden="true"></span>alhuissi · Independent studio</p>
-        <h1 id="identity-title">The World<br>Between Worlds</h1>
+        <h1 id="identity-title">alhuissi<br>studio</h1>
         <p class="identity-role">We build games, apps &amp; interactive worlds</p>
-        <p class="identity-work">Home of Dream Ocean, Pocket Orbit &amp; HanziZap</p>
         <button class="explore" data-explore type="button" hidden>
           <svg class="icon" aria-hidden="true"><use href="#icon-island"/></svg> Explore the island
         </button>
@@ -158,12 +164,15 @@
       <nav class="island-signs" aria-label="Places on the island" hidden>
         <a class="island-sign dream" href="#dream-ocean" data-place="dream-ocean">
           <svg class="icon" aria-hidden="true"><use href="#icon-wave"/></svg><span>Dream Ocean</span>
+          <svg class="icon category" role="img" aria-label="Video game"><title>Video game</title><use href="#icon-game"/></svg>
         </a>
         <a class="island-sign orbit" href="#pocket-orbit" data-place="pocket-orbit">
           <svg class="icon" aria-hidden="true"><use href="#icon-ship"/></svg><span>Pocket Orbit</span>
+          <svg class="icon category" role="img" aria-label="Video game"><title>Video game</title><use href="#icon-game"/></svg>
         </a>
         <a class="island-sign arcade" href="#hanzizap" data-place="hanzizap">
           <svg class="icon" aria-hidden="true"><use href="#icon-spark"/></svg><span>HanziZap</span>
+          <svg class="icon category" role="img" aria-label="iOS app"><title>iOS app</title><use href="#icon-phone"/></svg>
         </a>
         <a class="island-sign workshop" href="#workshop" data-place="workshop">
           <svg class="icon" aria-hidden="true"><use href="#icon-workshop"/></svg><span>Workshop</span>
@@ -177,6 +186,7 @@
         <div class="hud-hint" aria-hidden="true">
           <span class="hint-key"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span> Move
           <span class="hud-separator"></span> Hold <kbd>Shift</kbd> to walk
+          <span class="hud-separator"></span> <span class="hint-key"><kbd>Q</kbd><kbd>E</kbd></span> Turn
           <span class="hud-separator"></span> Drag to look
         </div>
         <div class="hud-actions">
@@ -192,10 +202,10 @@
       </div>
       <div class="touch-stick" data-stick aria-hidden="true" hidden><span></span></div>
       <a class="nearby" data-nearby href="#workshop" hidden>
-        <kbd aria-hidden="true">E</kbd> <span></span>
+        <kbd aria-hidden="true">Space</kbd> <span></span>
       </a>
       <button class="walking" data-walking type="button" hidden aria-label="Stop assisted walk"></button>
-      <p class="visually-hidden" id="keyboard-controls">Use W A S D or the arrow keys to sprint. Hold Shift to walk. Drag to look. Press E near a destination or R to return to arrival.</p>
+      <p class="visually-hidden" id="keyboard-controls">Use W A S D or the arrow keys to sprint. Hold Shift to walk. Press Q or E, or drag, to turn the camera. Press Space or Enter near a destination to open it, or R to return to arrival.</p>
       <p class="visually-hidden" role="status" data-status></p>
     </section>
 
@@ -334,8 +344,8 @@
         <h2 id="controls-title">Controls</h2>
         <dl class="control-list">
           <div><dt>Move</dt><dd>Use W A S D, the arrow keys, or the thumbstick to sprint. Hold Shift or the Walk button to slow down.</dd></div>
-          <div><dt>Look</dt><dd>Drag the scene to turn the camera.</dd></div>
-          <div><dt>Inspect</dt><dd>Press E when a prompt is visible, or select any landmark or its sign.</dd></div>
+          <div><dt>Look</dt><dd>Press Q or E, or drag the scene, to turn the camera.</dd></div>
+          <div><dt>Inspect</dt><dd>Press Space or Enter when a prompt is visible, or select any landmark or its sign.</dd></div>
           <div><dt>Return</dt><dd>Press R or use the reset button to return to arrival.</dd></div>
         </dl>
         <p>The project list is always available from the top of the screen.</p>

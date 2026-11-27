@@ -367,6 +367,8 @@ export function buildMeadow(root: Group, collisions: Collisions, clock: WorldClo
     sward.setColorAt(i, tint);
   });
   sward.receiveShadow = true;
+  // Layer 1: drawn for the main camera but skipped by the ocean's mirror.
+  sward.layers.set(1);
   root.add(sward);
 
   // Wild tufts: long arching clumps gathered at the meadow's edges, by the cliffs and around stones.
@@ -392,5 +394,6 @@ export function buildMeadow(root: Group, collisions: Collisions, clock: WorldClo
     wild.setColorAt(i, tint);
   });
   wild.receiveShadow = true;
+  wild.layers.set(1);
   root.add(wild);
 }

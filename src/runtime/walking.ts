@@ -202,6 +202,8 @@ export class Walker {
   }
 
   private canMove(x: number, z: number) {
+    // The island's rim is a wall: Andi slides along the edge instead of stepping off it.
+    if (shoreFraction(x, z) > .975) return false;
     const y = heightAt(x, z);
     return y > poolLevel - .19 && y - this.position.y < .27
       && !this.land.solid(x, z, footRadius, y + .04, y + 1.57);

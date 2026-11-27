@@ -23,6 +23,8 @@ import { IslandInput } from './input';
 import { Quality, reduceMotion } from './quality';
 import { disposeScene } from './resources';
 import { Walker, walkSpeed } from './walking';
+import { buildDragon } from '../world/dragon/dragon';
+import { buildStorm } from '../world/storm';
 
 export type Mode = 'overview' | 'walk';
 
@@ -110,7 +112,7 @@ export function createIsland(ui: Interface) {
   sun.position.set(-24, 33, 24);
   sun.castShadow = true;
   sun.shadow.mapSize.setScalar(quality.light ? 1024 : 2048);
-  Object.assign(sun.shadow.camera, { near: 2, far: 96, left: -32, right: 32, top: 31, bottom: -31 });
+  Object.assign(sun.shadow.camera, { near: 2, far: 150, left: -32, right: 32, top: 31, bottom: -31 });
   sun.shadow.camera.updateProjectionMatrix();
   sun.shadow.normalBias = .049;
   sun.shadow.bias = -.00021;
@@ -128,7 +130,7 @@ export function createIsland(ui: Interface) {
   const clock = { value: 0 };
   const traveler = createTraveler(walkSpeed, invalidate);
   scene.add(traveler.root, traveler.dust);
-  buildAtmosphere(world, clock, quality.light);
+  const updateOcean = buildAtmosphere(world, clock, quality.light, new Vector3(-24, 33, 24));
   buildTerrain(world);
   let filmicInMaterials = false;
   const updateLandmarks = buildLandmarks(world, collisions, clock, () => {
@@ -139,6 +141,8 @@ export function createIsland(ui: Interface) {
   const projectSigns = buildProjectSigns(world, collisions, invalidate);
   guideLights(world, !quality.light, clock, collisions);
   buildVegetation(world, collisions, clock, quality.light);
+  const flyDragon = buildDragon(world, clock, destinations['pocket-orbit'].landmark);
+  const storm = buildStorm(world, destinations['dream-ocean'].landmark);
   bakeSolids(world);
 
   const walker = new Walker(collisions);
@@ -323,7 +327,9 @@ export function createIsland(ui: Interface) {
     const reduced = reduceMotion.matches;
     previous = now;
     settling = Math.max(0, settling - dt);
-    if (input.axes.lengthSq() > .001) changeMode('walk', false);
+    if (input.axes.lengthSq() > .001 || input.turn) changeMode('walk', false);
+    // Q and E swing the camera around the traveler, about 100 degrees a second.
+    if (input.turn) rig.turn(input.turn * dt * 230, 0);
     if (mode === 'walk') {
       const steps = dt > .033 ? 2 : 1;
       let recovered = false;
@@ -357,6 +363,13 @@ export function createIsland(ui: Interface) {
     traveler.update(walker.position, walker.heading, dt, rig.camera,
       input.walkHeld || Boolean(route), walker.falling, snap);
     snap = false;
+    flyDragon();
+    updateOcean();
+    // The storm gathers as the traveler walks toward the Dream Ocean gateway.
+    const [gateX, gateZ] = destinations['dream-ocean'].landmark;
+    const nearGate = Math.hypot(walker.position.x - gateX, walker.position.z - gateZ);
+    const gathering = mode === 'walk' ? Math.min(1, Math.max(0, (18 - nearGate) / 10)) : 0;
+    storm.update(dt, gathering, rig.camera, reduced);
     if (composer) composer.render(dt);
     else renderer.render(scene, rig.camera);
     if (firstFrame && traveler.ready) {
@@ -373,7 +386,7 @@ export function createIsland(ui: Interface) {
       }
       resize();
     }
-    if (!reduced || walker.falling || walker.walkingRoute || walker.moving || input.axes.lengthSq() > 0 || settling > 0) {
+    if (!reduced || walker.falling || walker.walkingRoute || walker.moving || input.axes.lengthSq() > 0 || input.turn || settling > 0) {
       invalidate();
     } else {
       previous = 0;

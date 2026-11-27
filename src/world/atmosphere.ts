@@ -1,13 +1,15 @@
 import {
-  AdditiveBlending, BackSide, BufferGeometry, Color, DoubleSide, Float32BufferAttribute, Mesh, NearestFilter, PlaneGeometry,
+  AdditiveBlending, BackSide, BufferGeometry, CircleGeometry, Color, DodecahedronGeometry, DoubleSide, Float32BufferAttribute,
+  Mesh, MeshBasicMaterial, MeshStandardMaterial, NearestFilter, PlaneGeometry,
   Points, ShaderMaterial, SphereGeometry, SRGBColorSpace, TextureLoader, Vector3,
 } from 'three';
 import type { Group } from 'three';
-import { heightAt, pool, poolLanterns, poolLevel, randomFrom, rimPoint, seaLevel, shoreFraction, spill, spillAngle } from './land';
+import { buildOcean } from './ocean';
+import { heightAt, islandRadius, pool, poolLanterns, poolLevel, randomFrom, rimPoint, seaLevel, shoreFraction, spill, spillAngle } from './land';
 
 export type WorldClock = { value: number };
 
-const noise = /* glsl */ `
+export const noise = /* glsl */ `
   float hash(vec2 p) {
     vec3 q = fract(vec3(p.xyx) * .1031);
     q += dot(q, q.yzx + 33.33);
@@ -45,7 +47,7 @@ const skinVertex = /* glsl */ `
 // A night horizon in linear colour: an indigo dome that warms to violet, rose and teal light at the
 // waterline, with low cloud banks rimmed by the glow below them. Shared by the sky, the sea haze
 // and the mist so everything melts into the same horizon.
-const horizonColor = /* glsl */ `
+export const horizonColor = /* glsl */ `
   vec3 nightHorizon(vec3 d, float clock) {
     float elevation = d.y;
     float longitude = atan(d.x, -d.z);
@@ -362,9 +364,33 @@ function buildPool(root: Group, material: ShaderMaterial) {
   root.add(new Mesh(geometry, material));
 }
 
-function waterfall(root: Group, clock: WorldClock) {
-  const rows = 26;
-  const columns = 15;
+type FallShape = (u: number, v: number) => readonly [number, number, number];
+
+function fallMaterial(clock: WorldClock) {
+  return new ShaderMaterial({
+    uniforms: { clock },
+    transparent: true, depthWrite: false, side: DoubleSide, toneMapped: false,
+    vertexShader: skinVertex,
+    fragmentShader: /* glsl */ `
+      uniform float clock;
+      varying vec2 coords;
+      ${noise}
+      void main() {
+        vec2 p = vec2(coords.x * 17.0, coords.y * 26.0 - clock * 4.4);
+        float film = layers(p) * .45 + .55 * field(p * vec2(1.85, .33) + 6.0);
+        float ribbons = smoothstep(.39, .77, film);
+        float edge = smoothstep(0.0, .16, coords.x) * (1.0 - smoothstep(.84, 1.0, coords.x));
+        float alpha = edge * (1.0 - smoothstep(.985, 1.0, coords.y)) * (.42 + .53 * ribbons);
+        vec3 color = mix(vec3(.22, .42, .58), vec3(.66, .84, .95), ribbons);
+        gl_FragColor = vec4(color * color, alpha);
+        #include <colorspace_fragment>
+      }
+    `,
+  });
+}
+
+/** A ribbon of falling water: u runs across the fall, v from the lip down to the sea. */
+function fall(root: Group, material: ShaderMaterial, shape: FallShape, rows = 60, columns = 15) {
   const positions: number[] = [];
   const uv: number[] = [];
   const faces: number[] = [];
@@ -372,10 +398,7 @@ function waterfall(root: Group, clock: WorldClock) {
     const v = row / rows;
     for (let col = 0; col <= columns; col++) {
       const u = col / columns;
-      const angle = spillAngle + (u - .5) * (.109 + .07 * v);
-      const [x, z] = rimPoint(angle, 1.003 + Math.sin(v * 2.1) * .057);
-      const y = Math.max(poolLevel + .06, heightAt(x, z) + .02);
-      positions.push(x - v * .19, y + (seaLevel - y) * v, z + Math.sin(v * 2.5) * .71);
+      positions.push(...shape(u, v));
       uv.push(u, v);
       if (row === 0 || col === 0) continue;
       const i = row * (columns + 1) + col;
@@ -387,27 +410,71 @@ function waterfall(root: Group, clock: WorldClock) {
   geometry.setAttribute('position', new Float32BufferAttribute(positions, 3));
   geometry.setAttribute('uv', new Float32BufferAttribute(uv, 2));
   geometry.setIndex(faces);
-  const material = new ShaderMaterial({
-    uniforms: { clock },
-    transparent: true, depthWrite: false, side: DoubleSide, toneMapped: false,
-    vertexShader: skinVertex,
-    fragmentShader: /* glsl */ `
-      uniform float clock;
-      varying vec2 coords;
-      ${noise}
-      void main() {
-        vec2 p = vec2(coords.x * 17.0, coords.y * 8.1 - clock * 2.2);
-        float film = layers(p) * .45 + .55 * field(p * vec2(1.85, .33) + 6.0);
-        float ribbons = smoothstep(.39, .77, film);
-        float edge = smoothstep(0.0, .16, coords.x) * (1.0 - smoothstep(.84, 1.0, coords.x));
-        float alpha = edge * (1.0 - smoothstep(.76, 1.0, coords.y)) * (.42 + .53 * ribbons);
-        vec3 color = mix(vec3(.22, .42, .58), vec3(.66, .84, .95), ribbons);
-        gl_FragColor = vec4(color * color, alpha);
-        #include <colorspace_fragment>
-      }
-    `,
-  });
   root.add(new Mesh(geometry, material));
+  const [x, , z] = shape(.5, 1);
+  return new Vector3(x, seaLevel, z);
+}
+
+/** The pool's overflow, spilling over the rim. */
+function waterfall(root: Group, material: ShaderMaterial) {
+  return fall(root, material, (u, v) => {
+    const angle = spillAngle + (u - .5) * (.109 + .07 * v);
+    const [x, z] = rimPoint(angle, 1.003 + Math.sin(v * 2.1) * .057);
+    const y = Math.max(poolLevel + .06, heightAt(x, z) + .02);
+    return [x - v * .19, y + (seaLevel - y) * v, z + Math.sin(v * 2.5) * .71];
+  });
+}
+
+/** A point on the cliff face, matching the rock rows in terrain.ts (between the 2nd and 3rd rows). */
+function cliffFace(angle: number) {
+  const row = (index: number, width: number, depth: number) => {
+    const large = Math.sin(angle * 5 + index * .59) * .67 + Math.cos(angle * 13 - .9) * .22;
+    const cracks = Math.sin(angle * 39 + .4) * .2 + Math.cos(angle * 49) * .12;
+    const fold = (large + cracks) * (.031 + index * .003);
+    const [x, z] = rimPoint(angle, width + fold);
+    const [edgeX, edgeZ] = rimPoint(angle);
+    const strata = Math.sin(angle * 4 + .6) * .55 + large * .44;
+    return new Vector3(x - index * index * .025, depth + heightAt(edgeX, edgeZ) / (1 + index * .18) + strata,
+      z + index * index * .022);
+  };
+  return row(2, .96, -2.1).lerp(row(3, .985, -3.05), .5);
+}
+
+// Springs burst from caves in the cliff: a dark mouth ringed by boulders, water arcing out of it.
+const springAngles = [1.22, .3, 3.55, 4.95];
+function cliffSprings(root: Group, material: ShaderMaterial) {
+  const mouth = new MeshBasicMaterial({ color: '#05040c' });
+  const boulder = new MeshStandardMaterial({ color: '#5d5163', roughness: .9, flatShading: true });
+  const stone = new DodecahedronGeometry(1, 0);
+  const random = randomFrom(4411);
+  return springAngles.map((angle) => {
+    const face = cliffFace(angle);
+    const out = new Vector3(face.x / islandRadius[0] ** 2, 0, face.z / islandRadius[1] ** 2).normalize();
+    const side = new Vector3(-out.z, 0, out.x);
+    const origin = face.clone().addScaledVector(out, .12);
+    const cave = new Mesh(new CircleGeometry(1, 20), mouth);
+    cave.scale.set(.95, .72, 1);
+    cave.position.copy(origin).addScaledVector(out, -.05).add(new Vector3(0, .35, 0));
+    cave.lookAt(cave.position.clone().add(out));
+    root.add(cave);
+    for (let i = 0; i < 9; i++) {
+      const a = i / 9 * Math.PI * 2;
+      const rock = new Mesh(stone, boulder);
+      rock.position.copy(origin).addScaledVector(side, Math.cos(a) * 1.05)
+        .add(new Vector3(0, .35 + Math.sin(a) * .8, 0)).addScaledVector(out, .1 + random() * .12);
+      rock.scale.setScalar(.28 + random() * .2);
+      rock.rotation.set(random() * 6, random() * 6, random() * 6);
+      root.add(rock);
+    }
+    const lip = origin.clone().add(new Vector3(0, -.12, 0));
+    return fall(root, material, (u, v) => {
+      // Thrown clear of the rock, then dropping and spreading toward the sea.
+      const reach = 1.5 * Math.sqrt(v) + v * .8;
+      const width = .55 + v * 1.6;
+      return [lip.x + out.x * reach + side.x * (u - .5) * width, lip.y + (seaLevel - lip.y) * v * v * .35
+        + (seaLevel - lip.y) * v * .65, lip.z + out.z * reach + side.z * (u - .5) * width];
+    }, 70, 12);
+  });
 }
 
 export function portalSurface(clock: WorldClock, invalidate: () => void) {
@@ -533,7 +600,7 @@ function buildDust(root: Group, clock: WorldClock, count: number) {
   root.add(new Points(geometry, material));
 }
 
-export function buildAtmosphere(root: Group, clock: WorldClock, low: boolean) {
+export function buildAtmosphere(root: Group, clock: WorldClock, low: boolean, moon: Vector3) {
   const sky = new Mesh(new SphereGeometry(510, 32, 20), new ShaderMaterial({
     uniforms: { clock }, vertexShader: skinVertex, fragmentShader: skyFragment,
     side: BackSide, depthWrite: false, fog: false,
@@ -552,13 +619,15 @@ export function buildAtmosphere(root: Group, clock: WorldClock, low: boolean) {
   poolWater.defines = { POOL_LAMPS: '' };
   poolWater.uniforms.lampPos = { value: lamps };
   poolWater.uniforms.lampTint = { value: [new Color(1, .62, .26), new Color(1, .62, .26), new Color(.4, .66, 1)] };
-  flatSurface(root, 900, 900, 0, seaLevel, 0, water(0));
   buildPool(root, poolWater);
 
-  flatSurface(root, 830, 830, 0, -13.2, 0, new ShaderMaterial({
+  // Low sea fog drifting over the ocean, well below the island.
+  flatSurface(root, 830, 830, 0, seaLevel + 3.5, 0, new ShaderMaterial({
     uniforms: { clock }, vertexShader: skinVertex, fragmentShader: mistFragment,
     transparent: true, depthWrite: false,
   }));
-  waterfall(root, clock);
+  const falling = fallMaterial(clock);
+  const splashes = [waterfall(root, falling), ...cliffSprings(root, falling)];
   buildDust(root, clock, low ? 90 : 240);
+  return buildOcean(root, clock, !low, splashes, moon);
 }

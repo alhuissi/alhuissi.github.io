@@ -14,7 +14,10 @@ export class IslandCamera {
   private initialized = false;
   private intro = 0;
 
-  constructor(private readonly land: Collisions) {}
+  constructor(private readonly land: Collisions) {
+    // Layer 1 holds the meadow grass, which the ocean mirror skips.
+    this.camera.layers.enable(1);
+  }
 
   resize(width: number, height: number) {
     this.aspect = width / Math.max(1, height);

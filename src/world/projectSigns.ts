@@ -49,6 +49,8 @@ export function buildProjectSigns(root: Group, collisions: Collisions, invalidat
     texture.colorSpace = SRGBColorSpace;
     texture.anisotropy = 4;
     const print = new MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false, toneMapped: false });
+    // HanziZap's cream lettering sits right at the bloom threshold; keep it lit, not glowing.
+    if (id === 'hanzizap') print.color.setScalar(.8);
     for (const side of [-1, 1]) {
       const face = new Mesh(logoSurface, print);
       face.position.set(0, center, side * .166);

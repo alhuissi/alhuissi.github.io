@@ -2,6 +2,8 @@ import { Vector2 } from 'three';
 
 const walkKeys = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight']);
 const paceKeys = new Set(['ShiftLeft', 'ShiftRight']);
+const turnKeys = new Set(['KeyQ', 'KeyE']);
+const inspectKeys = new Set(['Space', 'Enter', 'NumpadEnter']);
 
 type Callbacks = {
   active: () => boolean;
@@ -19,6 +21,11 @@ export class IslandInput {
   private readonly joystick = new Vector2();
   private readonly events = new AbortController();
   private pacePointer: number | null = null;
+
+  /** -1 while Q turns the view left, 1 while E turns it right. */
+  get turn() {
+    return Number(this.held.has('KeyE')) - Number(this.held.has('KeyQ'));
+  }
 
   get walkHeld() {
     return this.pacePointer !== null || this.held.has('ShiftLeft') || this.held.has('ShiftRight');
@@ -38,11 +45,11 @@ export class IslandInput {
 
     canvas.addEventListener('keydown', (event) => {
       if (event.altKey || event.ctrlKey || event.metaKey || event.isComposing || !actions.active()) return;
-      if (walkKeys.has(event.code) || paceKeys.has(event.code)) {
+      if (walkKeys.has(event.code) || paceKeys.has(event.code) || turnKeys.has(event.code)) {
         event.preventDefault();
         this.held.add(event.code);
         read();
-      } else if (!event.repeat && event.code === 'KeyE') {
+      } else if (!event.repeat && inspectKeys.has(event.code)) {
         event.preventDefault();
         actions.inspect();
       } else if (!event.repeat && event.code === 'KeyR') {
