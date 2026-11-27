@@ -493,6 +493,19 @@ kbd {
   line-height: 1.4;
   text-shadow: 0 1px 4px #101a28;
 }
+.project-category {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .28rem .55rem .28rem .45rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  border-radius: 999px;
+  background: rgb(16 27 40 / .78);
+  color: var(--ink);
+  font: 500 .68rem/1 var(--mono);
+  letter-spacing: .12em;
+}
+.project-category .icon { width: 1.25rem; height: 1.25rem; color: var(--accent); }
 .project-select.dream { --mark-width: 11.8rem; --cover-position: 57%; }
 .project-select.orbit { --mark-width: 8.75rem; --cover-position: 69%; }
 .project-select.arcade { --mark-width: 9.4rem; --cover-position: 70%; }
